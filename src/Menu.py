@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import threading
 from openai import OpenAI
+from dotenv import load_dotenv
 
 # Importuri relative sau absolute în funcție de context
 try:
@@ -50,7 +51,9 @@ class MenuInterface:
         self.power_image = None
         
         # Inițializare client OpenAI pentru comenzi vocale
-        self.client = OpenAI(api_key="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")
+        load_dotenv()
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.client = OpenAI(api_key=openai_api_key)
         
         # Variabile pentru înregistrare vocală
         self.is_recording = False
@@ -113,7 +116,8 @@ class MenuInterface:
             # Folosim coordonatele pentru București (poți modifica pentru alte orașe)
             lat = 44.4268
             lon = 26.1025
-            api_key = "406edfa6e945f34d0af8038f29374bd0"
+            openweather_api_key = os.getenv("OPENWEATHER_API_KEY")
+            api_key = openweather_api_key
             
             url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
             print(f"URL API: {url}")

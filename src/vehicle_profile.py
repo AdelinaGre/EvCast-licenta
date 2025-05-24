@@ -16,6 +16,7 @@ import tempfile
 import numpy as np
 import os
 from openai import OpenAI
+from dotenv import load_dotenv
 
 
 
@@ -29,7 +30,9 @@ class VehicleProfile:
         self.vehicule_box = None
         
         # Inițializare client OpenAI
-        self.client = OpenAI(api_key="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")
+        load_dotenv()
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.client = OpenAI(api_key=openai_api_key)
         
         # Fundal
         self.bg_image_pil = Image.open("images/green_wave.jpeg").resize((1100, 700), Image.Resampling.LANCZOS)

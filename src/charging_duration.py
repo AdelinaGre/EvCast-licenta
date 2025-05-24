@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from authentification_config import db, auth
 from openai import OpenAI
+from dotenv import load_dotenv
 
 # Încercăm să importăm joblib și sklearn
 try:
@@ -25,6 +26,9 @@ except ImportError:
     
     install_requirements()
 
+load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
 class ChargingDuration:
     def __init__(self, root, current_user, id_token):
         self.root = root
@@ -34,7 +38,7 @@ class ChargingDuration:
         self.root.geometry("1100x700")
         
         # Inițializare client OpenAI pentru comenzi vocale
-        self.client = OpenAI(api_key="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")
+        self.client = OpenAI(api_key=openai_api_key)
         
         try:
             self.model = joblib.load("modele/rf_charging_duration_model.joblib")
@@ -369,6 +373,11 @@ class ChargingDuration:
 
             # Salvare în Firebase
             try:
+                if not self.id_token:
+                    print("Nu există token de autentificare pentru salvare")
+                    messagebox.showwarning("Avertisment", "Nu sunteți autentificat. Vă rugăm să vă autentificați din nou.")
+                    return
+
                 sanitized_email = self.current_user.replace('.', '_')
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 model_vehicul = vehicul.get("model", "Necunoscut")
@@ -407,15 +416,24 @@ class ChargingDuration:
                 }
 
                 # Salvăm în Firebase sub istoric_date/{email_utilizator}/{model_vehicul}
-                if self.id_token:
+                try:
                     db.child("istoric_date").child(sanitized_email).child(model_vehicul).push(history_data, token=self.id_token)
                     print(f"Date salvate cu succes în Firebase pentru utilizatorul {self.current_user} și modelul {model_vehicul}")
-                else:
-                    print("Nu există token de autentificare pentru salvare")
+                    messagebox.showinfo("Succes", "Datele au fost salvate cu succes în istoric")
+                except Exception as firebase_error:
+                    error_message = str(firebase_error)
+                    if "401" in error_message or "Permission denied" in error_message:
+                        messagebox.showerror("Eroare de Permisiuni", 
+                            "Nu aveți permisiunea de a salva date în baza de date. Vă rugăm să vă autentificați din nou sau contactați administratorul.")
+                    else:
+                        messagebox.showerror("Eroare", 
+                            f"Nu s-au putut salva datele în istoric: {error_message}")
+                    print(f"Eroare la salvarea în Firebase: {error_message}")
 
             except Exception as e:
-                print(f"Eroare la salvarea în Firebase: {str(e)}")
-                messagebox.showwarning("Avertisment", "Nu s-au putut salva datele în istoric")
+                print(f"Eroare la pregătirea datelor pentru salvare: {str(e)}")
+                messagebox.showerror("Eroare", 
+                    "A apărut o eroare la pregătirea datelor pentru salvare. Vă rugăm încercați din nou.")
 
         except Exception as e:
             print("Eroare la estimare:", str(e))
