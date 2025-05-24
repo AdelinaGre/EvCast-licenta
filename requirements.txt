@@ -1,0 +1,7 @@
+Pillow==10.2.0
+pyrebase4==4.7.1
+pandas==2.2.0
+scikit-learn==1.4.0
+numpy==1.26.3
+SpeechRecognition==3.10.0
+PyAudio==0.2.13 

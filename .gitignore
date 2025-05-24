@@ -1,0 +1,9 @@
+# Ignoră foldere generate automat
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.pkl
+*.h5
+.env
+.DS_Store
