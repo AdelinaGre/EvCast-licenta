@@ -17,6 +17,9 @@ from authentification_config import db
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import unicodedata
 import re
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import util
 
 # Importuri relative sau absolute în funcție de context
 try:
@@ -442,13 +445,63 @@ class MenuInterface:
             print("Nu există sesiuni pentru acest model și utilizator.")
         return pd.DataFrame(data)
 
-    def show_plot_in_tkinter(self, fig):
+    def show_plot_in_tkinter(self, fig, df=None, f1=None, f2=None, model=None):
         # Creează o fereastră nouă pentru grafic
         plot_window = tk.Toplevel(self.root)
         plot_window.title("Grafic generat")
         canvas = FigureCanvasTkAgg(fig, master=plot_window)
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        # Stare pentru axele curente
+        swap_state = {'swapped': False}
+
+        def recreate_plot():
+            import matplotlib.pyplot as plt
+            plt.style.use('dark_background')
+            fig2, ax2 = plt.subplots(figsize=(8, 4))
+            fig2.patch.set_facecolor('#0D0D0D')
+            ax2.set_facecolor('#0D0D0D')
+            if swap_state['swapped']:
+                x, y = df[f2], df[f1]
+                xlabel, ylabel = f2, f1
+                title = f"{f1} vs {f2} pentru {model}"
+            else:
+                x, y = df[f1], df[f2]
+                xlabel, ylabel = f1, f2
+                title = f"{f2} vs {f1} pentru {model}"
+            ax2.scatter(x, y, color='#B9EF17', s=50)
+            ax2.plot(x, y, color='white', alpha=0.5, linestyle='-')
+            ax2.set_xlabel(xlabel, color='white')
+            ax2.set_ylabel(ylabel, color='white')
+            ax2.set_title(title, color='white')
+            ax2.grid(True, color='gray', alpha=0.2)
+            for spine in ax2.spines.values():
+                spine.set_color('white')
+            ax2.tick_params(colors='white')
+            plt.tight_layout()
+            canvas.figure = fig2
+            canvas._tkcanvas.pack_forget()
+            canvas.get_tk_widget().pack_forget()
+            canvas.__init__(fig2, master=plot_window)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        # Adaugă buton de inversare axe
+        if df is not None and f1 is not None and f2 is not None and model is not None:
+            def toggle_swap():
+                swap_state['swapped'] = not swap_state['swapped']
+                recreate_plot()
+            switch_button = tk.Button(
+                plot_window,
+                text="Inversează axe",
+                command=toggle_swap,
+                bg=COLORS["ACCENT"],
+                fg=COLORS["BACKGROUND"],
+                font=FONTS["BUTTON"]
+            )
+            switch_button.pack(pady=5)
+
         # Adaugă un buton de închidere
         close_button = tk.Button(
             plot_window,
@@ -585,32 +638,46 @@ class MenuInterface:
                         print("Primele date:", df.head())
                         print("Număr de rânduri:", len(df))
                         
+                        # === Embedding semantic în loc de mapping fix ===
+                        available_columns = df.columns.tolist()
+                        model_embedder = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+                        col_embeddings = model_embedder.encode(available_columns, convert_to_tensor=True)
+
+                        spoken_features = [feature1, feature2]
+                        translated = []
+                        for feature in spoken_features:
+                            feature_emb = model_embedder.encode(feature, convert_to_tensor=True)
+                            scores = util.pytorch_cos_sim(feature_emb, col_embeddings)[0]
+                            best_idx = scores.argmax().item()
+                            best_score = scores[best_idx].item()
+                            if best_score > 0.65:
+                                translated.append(available_columns[best_idx])
+                            else:
+                                translated.append(feature)  # fallback
+
+                        f1, f2 = translated
+                        print(f"F1 semantic: {f1}, F2 semantic: {f2}")
+
                         if f1 in df.columns and f2 in df.columns:
                             import matplotlib.pyplot as plt
                             plt.style.use('dark_background')
-                            fig, ax = plt.subplots(figsize=(8,4))
+                            fig, ax = plt.subplots(figsize=(8, 4))
                             fig.patch.set_facecolor('#0D0D0D')
                             ax.set_facecolor('#0D0D0D')
-                            
+
                             scatter = ax.scatter(df[f1], df[f2], color='#B9EF17', s=50)
                             ax.plot(df[f1], df[f2], color='white', alpha=0.5, linestyle='-')
-                            
+
                             ax.set_xlabel(f1, color='white')
                             ax.set_ylabel(f2, color='white')
                             ax.set_title(f"{f2} vs {f1} pentru {model}", color='white')
-                            
                             ax.grid(True, color='gray', alpha=0.2)
-                            
+
                             for spine in ax.spines.values():
                                 spine.set_color('white')
-                                
                             ax.tick_params(colors='white')
-                            
-                            # Ajustăm layout-ul pentru a evita suprapuneri
                             plt.tight_layout()
-                            
-                            self.show_plot_in_tkinter(fig)
-                            print("DEBUG: show_plot_in_tkinter a fost apelat după comanda vocală!")
+                            self.show_plot_in_tkinter(fig, df, f1, f2, model)
                         else:
                             messagebox.showerror("Eroare", f"Nu s-au găsit coloanele {f1} și {f2} în datele pentru {model}.")
                         os.remove(temp_path)
