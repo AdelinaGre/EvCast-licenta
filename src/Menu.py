@@ -11,6 +11,12 @@ from pathlib import Path
 import threading
 from openai import OpenAI
 from dotenv import load_dotenv
+from graph_generator import plot_features
+import pandas as pd
+from authentification_config import db
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import unicodedata
+import re
 
 # Importuri relative sau absolute în funcție de context
 try:
@@ -58,6 +64,10 @@ class MenuInterface:
         # Variabile pentru înregistrare vocală
         self.is_recording = False
         self.recording_thread = None
+        
+        # Frame pentru grafic
+        self.plot_frame = tk.Frame(self.root, bg=COLORS["BACKGROUND"])
+        self.plot_frame.place(x=400, y=220, width=650, height=400)
         
         # Obține calea către directorul rădăcină al proiectului
         self.current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -112,35 +122,33 @@ class MenuInterface:
     def update_temperature(self):
         """Actualizează temperatura folosind OpenWeatherMap API"""
         try:
-            print("\n=== Începere actualizare temperatură ===")
-            # Folosim coordonatele pentru București (poți modifica pentru alte orașe)
+            # print("\n=== Începere actualizare temperatură ===")
             lat = 44.4268
             lon = 26.1025
             openweather_api_key = os.getenv("OPENWEATHER_API_KEY")
             api_key = openweather_api_key
-            
             url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
-            print(f"URL API: {url}")
-            
+            # print(f"URL API: {url}")
             response = requests.get(url)
-            print(f"Status code: {response.status_code}")
-            
+            # print(f"Status code: {response.status_code}")
             if response.status_code == 200:
                 data = response.json()
-                print(f"Răspuns API: {data}")
+                # print(f"Răspuns API: {data}")
                 if "main" in data and "temp" in data["main"]:
                     self.current_data["temperature"] = round(data["main"]["temp"])
-                    print(f"Temperatură actualizată: {self.current_data['temperature']}°C")
-                else:
-                    print("Eroare: Nu s-a găsit temperatura în răspunsul API")
-            else:
-                print(f"Eroare API: {response.text}")
-                print(f"Status code: {response.status_code}")
+                    # print(f"Temperatură actualizată: {self.current_data['temperature']}°C")
+                # else:
+                #     print("Eroare: Nu s-a găsit temperatura în răspunsul API")
+            # else:
+            #     print(f"Eroare API: {response.text}")
+            #     print(f"Status code: {response.status_code}")
         except requests.exceptions.RequestException as e:
-            print(f"Eroare de conexiune: {str(e)}")
+            # print(f"Eroare de conexiune: {str(e)}")
+            pass
         except Exception as e:
-            print(f"Eroare neașteptată: {str(e)}")
-        print("=== Finalizare actualizare temperatură ===\n")
+            # print(f"Eroare neașteptată: {str(e)}")
+            pass
+        # print("=== Finalizare actualizare temperatură ===\n")
 
     def save_current_data(self):
         """Salvează datele curente în fișier"""
@@ -416,8 +424,54 @@ class MenuInterface:
         if self.recording_thread:
             self.recording_thread.join()
 
+    def get_data_for_vehicle(self, user_email, model, token):
+        sanitized_email = user_email.replace('.', '_')
+        sessions = db.child("istoric_date").child(sanitized_email).child(model).get(token=token)
+        data = []
+        if sessions.each() is not None:
+            for session in sessions.each():
+                row = {}
+                features = session.val().get('features', {})
+                derived = session.val().get('derived_features', {})
+                predictii = session.val().get('predictii', {})
+                row.update(features)
+                row.update(derived)
+                row.update(predictii)
+                data.append(row)
+        else:
+            print("Nu există sesiuni pentru acest model și utilizator.")
+        return pd.DataFrame(data)
+
+    def show_plot_in_tkinter(self, fig):
+        # Creează o fereastră nouă pentru grafic
+        plot_window = tk.Toplevel(self.root)
+        plot_window.title("Grafic generat")
+        canvas = FigureCanvasTkAgg(fig, master=plot_window)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True)
+        # Adaugă un buton de închidere
+        close_button = tk.Button(
+            plot_window,
+            text="Închide",
+            command=plot_window.destroy,
+            bg=COLORS["ACCENT"],
+            fg=COLORS["BACKGROUND"],
+            font=FONTS["BUTTON"]
+        )
+        close_button.pack(pady=10)
+        # Setează dimensiunea ferestrei
+        plot_window.geometry("900x600")
+        # Centrează fereastra
+        plot_window.update_idletasks()
+        width = plot_window.winfo_width()
+        height = plot_window.winfo_height()
+        x = (plot_window.winfo_screenwidth() // 2) - (width // 2)
+        y = (plot_window.winfo_screenheight() // 2) - (height // 2)
+        plot_window.geometry(f'{width}x{height}+{x}+{y}')
+        plot_window.focus_set()
+        print("DEBUG: show_plot_in_tkinter a fost apelat și graficul ar trebui să fie vizibil într-o fereastră nouă.")
+
     def record_voice_command(self):
-        """Înregistrează și procesează comanda vocală"""
         try:
             import sounddevice as sd
             import numpy as np
@@ -425,46 +479,162 @@ class MenuInterface:
             import tempfile
             import os
 
-            # Configurare înregistrare
             fs = 44100
-            duration = 5  # secunde
+            duration = 10
             print("Înregistrare comandă vocală...")
-
-            # Înregistrare audio
             audio = sd.rec(int(duration * fs), samplerate=fs, channels=1)
             sd.wait()
-
-            # Salvare temporară
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
                 temp_path = f.name
             write(temp_path, fs, audio)
-
-            # Transcriere cu Whisper
             with open(temp_path, "rb") as audio_file:
                 transcription = self.client.audio.transcriptions.create(
                     model="whisper-1",
                     file=audio_file,
                     language="ro"
                 )
-            text = str(transcription).lower()
+            text = transcription.text.lower()
             print(f"Comandă vocală detectată: {text}")
 
-            # Procesare comandă
-            if "deschide" in text and "durata" in text and "incarcare" in text:
-                self.estimare_durata_incarcare()
-            elif "deschide" in text and "cost" in text and "incarcare" in text:
-                self.estimare_cost()
-            elif "deschide" in text and "profil" in text and "vehicul" in text:
-                self.profil_vehicul()
-            elif "deschide" in text and "km" in text and "ramase" in text:
-                self.estimare_h_km_ramase()
-
-            # Curățare fișier temporar
-            os.remove(temp_path)
-
+            def process_command():
+                print("Text recunoscut pentru regex:", text)
+                # Normalizează spațiile
+                normalized_text = re.sub(r'\s+', ' ', text)
+                print("Text normalizat:", normalized_text)
+                patterns = [
+                    r"cre[aă]ză\s+graf\w*\s+între\s+([\w\s]+?)\s+(?:și|si)\s+([\w\s]+?)\s+pentru\s+([\w\s]+)",
+                    # Variante mai permisive
+                    r"grafic.*?([\w\s]+).*?(?:si|și)\s*([\w\s]+).*?pentru\s*([\w\s]+)",
+                    r"grafic.*?pentru\s*([\w\s]+).*?(?:cu|între)\s*([\w\s]+)\s*(?:si|și)\s*([\w\s]+)",
+                    r"cre[aă]ză.*?grafic.*?([\w\s]+).*?(?:si|și)\s*([\w\s]+).*?pentru\s*([\w\s]+)",
+                    r"grafic.*?([\w\s]+).*?(?:si|și)\s*([\w\s]+).*?([\w\s]+)",
+                    # Variantele vechi
+                    r"pentru ([\w\s]+) creeaza grafic cu ([\w\s]+) si ([\w\s]+)",
+                    r"cre[aă]ză grafic (?:cu|între) ([\w\s]+) (?:și|si) ([\w\s]+) pentru ([\w\s]+)",
+                    r"cre[aă]ză (?:un )?grafic (?:cu|între) ([\w\s]+) (?:și|si) ([\w\s]+) pentru ([\w\s]+)"
+                ]
+                found = False
+                for pat in patterns:
+                    print(f"Încerc pattern: {pat}")
+                    match = re.search(pat, normalized_text)
+                    if match:
+                        print(f"Pattern potrivit: {pat}, grupuri: {match.groups()}")
+                        if pat.startswith("pentru"):
+                            model = match.group(1).strip().title()
+                            feature1 = match.group(2).strip().replace(' ', '_').lower()
+                            feature2 = match.group(3).strip().replace(' ', '_').lower()
+                        else:
+                            feature1 = match.group(1).strip().replace(' ', '_').lower()
+                            feature2 = match.group(2).strip().replace(' ', '_').lower()
+                            model = match.group(3).strip().title()
+                        
+                        feature_map = {
+                            'energia_consumata': 'energy_consumed',
+                            'energia_estimata': 'energy_consumed',
+                            'energy_consumed': 'energy_consumed',
+                            'durata_estimata_ore': 'durata_estimata_ore',
+                            'durataestimataore': 'durata_estimata_ore',
+                            'durataestimata_in_ore': 'durata_estimata_ore',
+                            'durata_estimata_in_ore': 'durata_estimata_ore',
+                            'durata_estimata_ori': 'durata_estimata_ore',
+                            'cost_estimare': 'charging_cost',
+                            'rata_incarcare': 'charging_rate',
+                            'stare_incarcare_start': 'state_of_charge_start',
+                            'stare_incarcare_end': 'state_of_charge_end',
+                            'distanta': 'distance',
+                        }
+                        
+                        def remove_diacritics(text):
+                            return ''.join(
+                                c for c in unicodedata.normalize('NFD', text)
+                                if unicodedata.category(c) != 'Mn'
+                            )
+                        
+                        def normalize_feature_name(text):
+                            text = remove_diacritics(text)
+                            for word in [' in ', ' între ', ' intre ', ' cu ', ' și ', ' si ', ' de ', ' la ', ' pe ', 'in_', 'în_', '_in_', '_în_', 'intre_', 'cu_', 'si_', 'și_']:
+                                text = text.replace(word, ' ')
+                            text = text.replace(' ', '_').replace('-', '_').lower()
+                            while '__' in text:
+                                text = text.replace('__', '_')
+                            text = text.strip('_')
+                            return text
+                        
+                        feature1 = normalize_feature_name(feature1)
+                        feature2 = normalize_feature_name(feature2)
+                        f1 = feature_map.get(feature1, feature1)
+                        f2 = feature_map.get(feature2, feature2)
+                        
+                        print(f"Feature1 detectat (după normalizare și mapping): {f1}")
+                        print(f"Feature2 detectat (după normalizare și mapping): {f2}")
+                        
+                        model_map = {
+                            'bmw i3': 'BMW i3',
+                            'pmw i3': 'BMW i3',
+                            'bni3': 'BMW i3',
+                            'bnv i3': 'BMW i3',
+                            'bmp i3': 'BMW i3',
+                            'bmw13': 'BMW i3',
+                            'bmwi3': 'BMW i3',
+                            'tesla model 3': 'Tesla Model 3',
+                        }
+                        model_key = model_map.get(model.lower(), model)
+                        df = self.get_data_for_vehicle(self.current_user, model_key, self.id_token)
+                        
+                        print("Coloane disponibile:", df.columns)
+                        print("Primele date:", df.head())
+                        print("Număr de rânduri:", len(df))
+                        
+                        if f1 in df.columns and f2 in df.columns:
+                            import matplotlib.pyplot as plt
+                            plt.style.use('dark_background')
+                            fig, ax = plt.subplots(figsize=(8,4))
+                            fig.patch.set_facecolor('#0D0D0D')
+                            ax.set_facecolor('#0D0D0D')
+                            
+                            scatter = ax.scatter(df[f1], df[f2], color='#B9EF17', s=50)
+                            ax.plot(df[f1], df[f2], color='white', alpha=0.5, linestyle='-')
+                            
+                            ax.set_xlabel(f1, color='white')
+                            ax.set_ylabel(f2, color='white')
+                            ax.set_title(f"{f2} vs {f1} pentru {model}", color='white')
+                            
+                            ax.grid(True, color='gray', alpha=0.2)
+                            
+                            for spine in ax.spines.values():
+                                spine.set_color('white')
+                                
+                            ax.tick_params(colors='white')
+                            
+                            # Ajustăm layout-ul pentru a evita suprapuneri
+                            plt.tight_layout()
+                            
+                            self.show_plot_in_tkinter(fig)
+                            print("DEBUG: show_plot_in_tkinter a fost apelat după comanda vocală!")
+                        else:
+                            messagebox.showerror("Eroare", f"Nu s-au găsit coloanele {f1} și {f2} în datele pentru {model}.")
+                        os.remove(temp_path)
+                        found = True
+                        return
+                
+                if not found:
+                    messagebox.showerror("Eroare", "Nu am putut interpreta comanda vocală pentru generarea graficului.")
+                
+                if "deschide" in text and "durata" in text and "incarcare" in text:
+                    self.estimare_durata_incarcare()
+                elif "deschide" in text and "cost" in text and "incarcare" in text:
+                    self.estimare_cost()
+                elif "deschide" in text and "profil" in text and "vehicul" in text:
+                    self.profil_vehicul()
+                elif "deschide" in text and "km" in text and "ramase" in text:
+                    self.estimare_h_km_ramase()
+            
+            # Executăm procesarea comenzii în thread-ul principal
+            self.root.after(0, process_command)
+            
         except Exception as e:
             print(f"Eroare la procesarea comenzii vocale: {str(e)}")
-            messagebox.showerror("Eroare", f"Nu s-a putut procesa comanda vocală: {str(e)}")
+            self.root.after(0, lambda: messagebox.showerror("Eroare", f"Nu s-a putut procesa comanda vocală: {str(e)}"))
         finally:
             self.is_recording = False
 

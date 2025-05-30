@@ -7,9 +7,10 @@ import subprocess
 import os
 import tempfile
 import wave
+import re
 import numpy as np
 import whisper
-
+import unicodedata
 # Importuri relative sau absolute în funcție de context
 try:
     from .users_signing import UserSigning
@@ -53,6 +54,7 @@ class LoginInterface:
         self.recording_thread = None
         self.audio_data = []
         self.sample_rate = 16000
+        duration = 10  # secunde
          
 
     def setup_background(self):
@@ -181,7 +183,6 @@ class LoginInterface:
             root_menu.mainloop()
         else:
             messagebox.showerror("Eroare", "Autentificarea a eșuat!")
-
 
 
 if __name__ == "__main__":

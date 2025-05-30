@@ -393,7 +393,7 @@ class ChargingDuration:
                         "charging_rate": features.get("Charging Rate (kW)", 0),
                         "state_of_charge_start": features.get("State of Charge (Start %)", 0),
                         "state_of_charge_end": features.get("State of Charge (End %)", 0),
-                        "distance": features.get("Distance Driven (km)", 0),
+                        "distance": features.get("Distance Driven (since last charge) (km)", features.get("Distance Driven (km)", 0)),
                         "temperature": features.get("Temperature (°C)", 0),
                         "battery_capacity": features.get("Battery Capacity (kWh)", 0),
                         "vehicle_age": features.get("Vehicle Age (years)", 0),
