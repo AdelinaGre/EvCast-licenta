@@ -97,6 +97,11 @@ class MenuInterface:
         self.user_signing = UserSigning()
         self.create_widgets()             # <- APELĂM ÎNTÂI widgets
         self.update_current_data() 
+        # Dropdown pentru selectarea vehiculului și afișarea imaginii
+        self.create_vehicle_selector()
+        # Afișează imaginea primului vehicul pentru utilizatorul logat
+        first_vehicle = self.get_first_vehicle_for_user()
+        self.show_vehicle_image(first_vehicle)
 
     def update_current_data(self):
         """Actualizează datele curente"""
@@ -709,6 +714,57 @@ class MenuInterface:
         """Gestionează închiderea ferestrei copil"""
         child_window.destroy()
         self.root.deiconify()  # Arată din nou fereastra meniului
+
+    def get_first_vehicle_for_user(self):
+        sanitized_email = self.current_user.replace('.', '_')
+        vehicles_ref = db.child("istoric_date").child(sanitized_email)
+        vehicles = vehicles_ref.get(token=self.id_token)
+        if vehicles.each():
+            return vehicles.each()[0].key()
+        return None
+
+    def get_user_vehicles(self):
+        sanitized_email = self.current_user.replace('.', '_')
+        try:
+            vehicles_ref = db.child("vehicule").child(sanitized_email)
+            vehicles = vehicles_ref.get(token=self.id_token)
+            models = []
+            if vehicles.each():
+                for v in vehicles.each():
+                    val = v.val()
+                    if isinstance(val, dict) and 'model' in val:
+                        models.append(val['model'])
+            return models
+        except Exception as e:
+            print(f"Eroare la extragerea vehiculelor: {e}")
+        return []
+
+    def create_vehicle_selector(self):
+        vehicles = self.get_user_vehicles()
+        if not vehicles:
+            return
+        self.selected_vehicle = tk.StringVar()
+        self.selected_vehicle.set(vehicles[0])
+        vehicle_menu = tk.OptionMenu(self.root, self.selected_vehicle, *vehicles, command=self.show_vehicle_image)
+        vehicle_menu.config(font=FONTS["BUTTON"], bg=COLORS["ACCENT"], fg=COLORS["BACKGROUND"], width=20)
+        vehicle_menu.place(x=600, y=180)
+
+    def show_vehicle_image(self, model):
+        if not model:
+            return
+        img_name = f"vehicul_{model.lower().replace(' ', '_').replace('-', '_')}.png"
+        img_path = os.path.join(self.images_dir, img_name)
+        if os.path.exists(img_path):
+            img = Image.open(img_path)
+            img = img.resize((350, 350), Image.Resampling.LANCZOS)
+            self.vehicle_img = ImageTk.PhotoImage(img)
+            if hasattr(self, 'vehicle_img_label'):
+                self.vehicle_img_label.config(image=self.vehicle_img)
+            else:
+                self.vehicle_img_label = tk.Label(self.root, image=self.vehicle_img, bg=COLORS["BACKGROUND"])
+                self.vehicle_img_label.place(x=600, y=220)
+        else:
+            print(f"Imaginea pentru {model} nu a fost găsită la {img_path}")
 
 if __name__ == "__main__":
     root = tk.Tk()
