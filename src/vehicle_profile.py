@@ -29,24 +29,24 @@ class VehicleProfile:
         self.root.geometry("1100x700")
         self.vehicule_box = None
         
-        # Inițializare client OpenAI
+       
         load_dotenv()
         openai_api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=openai_api_key)
         
-        # Fundal
-        self.bg_image_pil = Image.open("images/green_wave.jpeg").resize((1100, 700), Image.Resampling.LANCZOS)
+      
+        self.bg_image_pil = Image.open("images/white_green_wave.png").resize((1100, 700), Image.Resampling.LANCZOS)
         self.background_image = ImageTk.PhotoImage(self.bg_image_pil)
         self.background_label = tk.Label(self.root, image=self.background_image)
         self.background_label.place(relwidth=1, relheight=1)
 
-        # Buton înapoi la meniu
+       
         back_button = tk.Button(
             self.root,
             text="↩ Înapoi la Meniu",
             font=("Roboto", 12),
-            bg="#B9EF17",
-            fg="#0D0D0D",
+            bg="#39753c",
+            fg="white",
             command=self.back_to_menu
         )
         back_button.place(x=935, y=30)
@@ -55,7 +55,7 @@ class VehicleProfile:
         self.load_dropdown_data()
         self.create_widgets()
         
-        # Adăugăm variabile pentru înregistrare
+        
         self.is_recording = False
         self.recording_thread = None
         self.recognizer = sr.Recognizer()
@@ -75,24 +75,24 @@ class VehicleProfile:
 
     def create_widgets(self):
         tk.Label(self.root, text="Vehicul Profile", font=("Roboto", 20, "bold"),
-                 bg="#0D0D0D", fg="#B9EF17").place(x=50, y=150)
+                 bg="white", fg="#39753c").place(x=50, y=150)
 
-        self.logo_image = PhotoImage(file="images/plugin.png")
-        tk.Label(self.root, image=self.logo_image, bg="#0D0D0D").place(x=30, y=30)
+        self.logo_image = PhotoImage(file="images/plugin_1.png")
+        tk.Label(self.root, image=self.logo_image, bg="white").place(x=30, y=30)
 
         tk.Label(self.root, text="EVcast", font=("Roboto", 24, "bold"),
-                 bg="#0D0D0D", fg="white").place(x=110, y=41)
+                 bg="white", fg="#39753c").place(x=110, y=41)
 
         tk.Label(self.root, text=f"Utilizator: {self.current_user}", font=("Roboto", 12),
-                 bg="#0D0D0D", fg="white").place(x=700, y=30)
+                 bg="white", fg="black").place(x=700, y=30)
 
-        # Buton deschidere fereastră profil vehicul
+       
         tk.Button(self.root, text="Adaugă Profil Vehicul", font=("Roboto", 12),
-                  bg="#B9EF17", fg="#0D0D0D", relief="flat", command=self.profil_vehicul).place(x=50, y=200, width=250)
+                  bg="#39753c", fg="white", relief="flat", command=self.profil_vehicul).place(x=50, y=200, width=250)
 
 
 
-        self.afiseaza_vehicule()  # Afișăm vehiculele deja existente
+        self.afiseaza_vehicule()  
 
     def back_to_menu(self):
         """Închide interfața curentă și revine la meniu"""
@@ -105,17 +105,17 @@ class VehicleProfile:
         window = tk.Toplevel(self.root)
         window.title("Adaugă Vehicul")
         window.geometry("400x600")
-        window.configure(bg="#1A1C1A")
+        window.configure(bg="white")
         window.transient(self.root)
         window.grab_set()
         window.focus_set()
         window.lift()
 
         tk.Label(window, text="Adaugă Vehicul", font=("Roboto", 16, "bold"),
-                 bg="#1A1C1A", fg="#B9EF17").pack(pady=20)
+                 bg="white", fg="#39753c").pack(pady=20)
 
-        # Indicator de înregistrare
-        self.recording_indicator = tk.Canvas(window, width=60, height=60, bg="#1A1C1A", highlightthickness=0)
+        
+        self.recording_indicator = tk.Canvas(window, width=60, height=60, bg="white", highlightthickness=0)
         self.recording_indicator.pack(pady=10)
         self.recording_indicator.create_oval(10, 10, 50, 50, fill="gray", tags="indicator")
 
@@ -123,39 +123,39 @@ class VehicleProfile:
                                      font=("Roboto", 10), wrap=tk.WORD)
         self.text_display.pack(pady=10, padx=20)
 
-        # Frame pentru butoane
-        buttons_frame = tk.Frame(window, bg="#1A1C1A")
+        
+        buttons_frame = tk.Frame(window, bg="white")
         buttons_frame.pack(pady=10)
 
-        self.record_button = tk.Button(buttons_frame, text="🎤 Începe Înregistrarea",
-                                     font=("Roboto", 12), bg="#B9EF17", fg="#0D0D0D",
+        self.record_button = tk.Button(buttons_frame, text=" Începe Înregistrarea",
+                                     font=("Roboto", 12), bg="#39753c", fg="#0D0D0D",
                                      command=lambda: self.toggle_recording(window))
         self.record_button.pack(side=tk.LEFT, padx=5)
 
-        save_button = tk.Button(buttons_frame, text="💾 Salvează",
-                              font=("Roboto", 12), bg="#B9EF17", fg="#0D0D0D",
+        save_button = tk.Button(buttons_frame, text=" Salvează",
+                              font=("Roboto", 12), bg="#39753c", fg="#0D0D0D",
                               command=lambda: self.save_voice_data(window))
         save_button.pack(side=tk.LEFT, padx=5)
 
-        # Buton pentru introducere manuală
-        manual_button = tk.Button(buttons_frame, text="✍️ Introducere Manuală",
-                                  font=("Roboto", 12), bg="#B9EF17", fg="#0D0D0D",
+       
+        manual_button = tk.Button(buttons_frame, text=" Introducere Manuală",
+                                  font=("Roboto", 12), bg="#39753c", fg="#0D0D0D",
                                   command=lambda: self.show_manual_input(window))
         manual_button.pack(side=tk.LEFT, padx=5)
 
     def toggle_recording(self, window):
-        """Comută între pornirea și oprirea înregistrării"""
+       
         if not self.is_recording:
             self.start_recording(window)
-            self.record_button.config(text="⏹ Oprește Înregistrarea")
+            self.record_button.config(text=" Oprește Înregistrarea")
             self._animate_recording()
         else:
             self.stop_recording()
-            self.record_button.config(text="🎤 Începe Înregistrarea")
+            self.record_button.config(text=" Începe Înregistrarea")
             self.recording_indicator.itemconfig("indicator", fill="gray")
 
     def _animate_recording(self):
-        """Animează indicatorul de înregistrare"""
+       
         if self.is_recording:
             current_color = self.recording_indicator.itemcget("indicator", "fill")
             new_color = "#ff0000" if current_color == "gray" else "gray"
@@ -163,7 +163,7 @@ class VehicleProfile:
             self.root.after(500, self._animate_recording)
 
     def start_recording(self, window):
-        """Pornește înregistrarea audio"""
+      
         if not self.is_recording:
             self.is_recording = True
             self.recording_thread = threading.Thread(target=lambda: self.record_audio(window))
@@ -171,17 +171,17 @@ class VehicleProfile:
             self.recording_thread.start()
 
     def stop_recording(self):
-        """Oprește înregistrarea audio"""
+       
         self.is_recording = False
         if self.recording_thread:
             self.recording_thread.join()
 
     def record_audio(self, window):
-        """Înregistrează audio și transcrie folosind OpenAI Whisper API"""
+       
         try:
             print("=== Începere proces înregistrare audio ===")
 
-            # 🔍 1. Găsește un dispozitiv valid de înregistrare
+            #  1. Găsește un dispozitiv valid de înregistrare
             devices = sd.query_devices()
             input_devices = [d for d in devices if d['max_input_channels'] > 0]
             print(f"Dispozitive audio găsite: {len(input_devices)}")
@@ -201,7 +201,7 @@ class VehicleProfile:
 
             print(f"Folosim dispozitivul implicit: {default_input['name']}")
 
-            # 🛠️ 2. Parametri înregistrare
+          
             fs = 44100
             duration = 15  # secunde
             print(f"Configurare înregistrare: {fs}Hz, {duration} secunde")
@@ -211,11 +211,11 @@ class VehicleProfile:
             sd.default.device = default_input['index']
 
             window.after(0, lambda: self.text_display.delete(1.0, tk.END))
-            window.after(0, lambda: self.text_display.insert(tk.END, f"🎤 Microfon selectat: {default_input['name']}\n"))
-            window.after(0, lambda: self.text_display.insert(tk.END, "🔊 Înregistrare în curs...\n"))
-            window.after(0, lambda: self.text_display.insert(tk.END, "🎙️ Vorbiți acum...\n"))
+            window.after(0, lambda: self.text_display.insert(tk.END, f" Microfon selectat: {default_input['name']}\n"))
+            window.after(0, lambda: self.text_display.insert(tk.END, " Înregistrare în curs...\n"))
+            window.after(0, lambda: self.text_display.insert(tk.END, " Vorbiți acum...\n"))
 
-            # 🎙️ 3. Înregistrare
+            
             audio = sd.rec(int(duration * fs))
             sd.wait()
 
@@ -224,11 +224,11 @@ class VehicleProfile:
             if audio is None or not audio.any():
                 raise Exception(" Nu s-a detectat niciun sunet în timpul înregistrării!")
 
-            # 🔊 4. Normalizează audio
+           
             audio = audio / np.max(np.abs(audio))
             print(f"Audio înregistrat - Formă: {audio.shape}, Valoare maximă: {np.max(audio)}")
 
-            # 💾 5. Salvează fișier temporar
+           
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
                 temp_path = f.name
             write(temp_path, fs, audio)
@@ -236,7 +236,7 @@ class VehicleProfile:
 
             window.after(0, lambda: self.text_display.insert(tk.END, "Procesare cu OpenAI Whisper...\n"))
 
-            # 🧠 6. Transcriere folosind OpenAI Whisper
+            
             with open(temp_path, "rb") as audio_file:
                 transcription = self.client.audio.transcriptions.create(
                     model="whisper-1",
@@ -249,14 +249,14 @@ class VehicleProfile:
             if not text.strip():
                 raise Exception("Nu s-a putut detecta niciun text în înregistrare!")
 
-            # ✅ 7. Afișează în UI și procesează
+           
             window.after(0, lambda: self.text_display.insert(tk.END, "\n=== Text recunoscut ===\n"))
             window.after(0, lambda: self.text_display.insert(tk.END, f"{text}\n"))
             window.after(0, lambda: self.text_display.insert(tk.END, "=====================\n"))
             window.after(0, lambda: self.text_display.insert(tk.END, "\nProcesare informații...\n"))
             window.after(0, lambda: self.update_text_display(text))
 
-            # 🧹 8. Curăță fișierul temporar
+            
             os.remove(temp_path)
             print("Fișierul audio temporar a fost șters")
 
@@ -267,12 +267,12 @@ class VehicleProfile:
 
         finally:
             self.is_recording = False
-            window.after(0, lambda: self.record_button.config(text="🎤 Începe Înregistrarea"))
+            window.after(0, lambda: self.record_button.config(text=" Începe Înregistrarea"))
             window.after(0, lambda: self.recording_indicator.itemconfig("indicator", fill="gray"))
 
 
     def update_text_display(self, text):
-        """Actualizează afișajul textului și procesează informațiile"""
+       
         self.text_display.insert(tk.END, f"\nText recunoscut: {text}\n")
 
         vehicle_info = {
@@ -283,7 +283,7 @@ class VehicleProfile:
             "user_type": None
         }
 
-        # Dicționar cu numere în cuvinte
+       
         numere_cuvinte = {
             "un": "1", "unu": "1", "doi": "2", "două": "2", "trei": "3",
             "patru": "4", "cinci": "5", "șase": "6", "șapte": "7",
@@ -292,37 +292,37 @@ class VehicleProfile:
 
         text_lower = text.lower()
 
-        # Convertim numerele din cuvinte în cifre
+        
         for cuv, cifra in numere_cuvinte.items():
             text_lower = re.sub(rf'\b{cuv}\b', cifra, text_lower)
 
-        # Caută modelul
+       
         for model in self.vehicle_models:
             if model.lower() in text_lower:
                 vehicle_info["model"] = model
                 self.text_display.insert(tk.END, f"Model detectat: {model}\n")
                 break
 
-        # Caută capacitatea bateriei
+       
         battery_match = re.search(r'(\d+)\s*(?:kwh|kw)', text_lower)
         if battery_match:
             vehicle_info["baterie_kWh"] = battery_match.group(1)
             self.text_display.insert(tk.END, f"Capacitate baterie detectată: {battery_match.group(1)} kWh\n")
 
-        # Caută vârsta
+        
         age_match = re.search(r'(\d+)\s*(?:ani|an)', text_lower)
         if age_match:
             vehicle_info["vechime_ani"] = age_match.group(1)
             self.text_display.insert(tk.END, f"Vechime detectată: {age_match.group(1)} ani\n")
 
-        # Caută tipul de încărcător
+       
         for charger in self.charger_types:
             if charger.lower() in text_lower:
                 vehicle_info["tip_incarcator"] = charger
                 self.text_display.insert(tk.END, f"Tip încărcător detectat: {charger}\n")
                 break
 
-        # Caută tipul de utilizator cu variante comune
+        
         user_type_mapping = {
             "comuter": "Commuter",
             "commuter": "Commuter",
@@ -335,14 +335,14 @@ class VehicleProfile:
             "sofer casual": "Casual Driver"
         }
 
-        # Caută tipul de utilizator în text
+        
         for key, value in user_type_mapping.items():
             if key in text_lower:
                 vehicle_info["user_type"] = value
                 self.text_display.insert(tk.END, f"Tip utilizator detectat: {value}\n")
                 break
 
-        # Dacă nu s-a găsit tipul de utilizator, verifică după cuvinte cheie
+        
         if vehicle_info["user_type"] is None:
             if "comut" in text_lower:
                 vehicle_info["user_type"] = "Commuter"
@@ -359,44 +359,43 @@ class VehicleProfile:
 
 
     def handle_voice_input(self):
-        """Gestionează input-ul vocal"""
+       
         if not hasattr(self, 'voice_window'):
             self.voice_window = tk.Toplevel(self.root)
             self.voice_window.title("Înregistrare Vocală")
             self.voice_window.geometry("500x600")
             self.voice_window.configure(bg="#1A1C1A")
             
-            # Indicator de înregistrare
+            
             self.recording_indicator = tk.Canvas(self.voice_window, width=60, height=60, 
                                               bg="#1A1C1A", highlightthickness=0)
             self.recording_indicator.pack(pady=10)
             self.recording_indicator.create_oval(10, 10, 50, 50, fill="gray", tags="indicator")
 
-            # Zonă pentru text
+           
             self.text_display = tk.Text(self.voice_window, height=20, width=50, 
                                       bg="#262626", fg="white", font=("Roboto", 10))
             self.text_display.pack(pady=10, padx=20)
 
-            # Butoane
+            
             button_frame = tk.Frame(self.voice_window, bg="#1A1C1A")
             button_frame.pack(pady=10)
 
-            self.record_button = tk.Button(button_frame, text="🎤 Start Înregistrare",
-                                         font=("Roboto", 12), bg="#B9EF17", fg="#0D0D0D",
+            self.record_button = tk.Button(button_frame, text=" Start Înregistrare",
+                                         font=("Roboto", 12), bg="#39753c", fg="#0D0D0D",
                                          command=self.toggle_recording)
             self.record_button.pack(side=tk.LEFT, padx=5)
 
-            save_button = tk.Button(button_frame, text="💾 Salvează",
-                                  font=("Roboto", 12), bg="#B9EF17", fg="#0D0D0D",
+            save_button = tk.Button(button_frame, text=" Salvează",
+                                  font=("Roboto", 12), bg="#39753c", fg="#0D0D0D",
                                   command=self.save_voice_data)
             save_button.pack(side=tk.LEFT, padx=5)
 
     def save_voice_data(self, window):
-        """Salvează datele vehiculului din ultima înregistrare, inclusiv user_type dacă există"""
-        # Extrage tot textul din display
+        
         text = self.text_display.get(1.0, tk.END)
         
-        # Caută liniile care conțin informații detectate
+       
         vehicle_info = {
             "model": None,
             "baterie_kWh": None,
@@ -405,7 +404,7 @@ class VehicleProfile:
             "user_type": None
         }
         
-        # Extrage informațiile din text
+        
         for line in text.split('\n'):
             if "Model detectat:" in line:
                 vehicle_info["model"] = line.split(": ")[1].strip()
@@ -418,7 +417,7 @@ class VehicleProfile:
             elif "Tip utilizator detectat:" in line:
                 vehicle_info["user_type"] = line.split(": ")[1].strip()
 
-        # Verifică dacă avem toate informațiile necesare
+       
         missing_info = []
         for key, value in vehicle_info.items():
             if value is None:
@@ -439,14 +438,14 @@ class VehicleProfile:
                 f"Vă rugăm să încercați din nou sau să folosiți introducerea manuală.")
             return
 
-        # Salvează în Firebase
+       
         sanitized_email = self.current_user.replace('.', '_')
         try:
             if self.id_token:
                 db.child("vehicule").child(sanitized_email).push(vehicle_info, token=self.id_token)
                 messagebox.showinfo("Succes", "Vehicul salvat cu succes!")
-                window.destroy()  # Închide fereastra de înregistrare
-                self.afiseaza_vehicule()  # Actualizează lista de vehicule
+                window.destroy()  
+                self.afiseaza_vehicule() 
             else:
                 messagebox.showerror("Eroare", "Nu sunteți autentificat. Vă rugăm să vă autentificați din nou.")
         except Exception as e:
@@ -467,17 +466,16 @@ class VehicleProfile:
             messagebox.showerror("Eroare la salvare", error_message)
 
     def show_manual_input(self, window):
-        """Afișează interfața pentru introducerea manuală a datelor"""
-        # Șterge butoanele și widgeturile existente
+        
         for widget in window.winfo_children():
             widget.destroy()
 
         tk.Label(window, text="Profil Vehicul", font=("Roboto", 16, "bold"),
-                 bg="#1A1C1A", fg="#B9EF17").pack(pady=20)
+                 bg="white", fg="#39753c").pack(pady=20)
 
-        # Dropdowns
+        
         def create_dropdown(label_text, options, variable):
-            tk.Label(window, text=label_text, bg="#1A1C1A", fg="white", 
+            tk.Label(window, text=label_text, bg="white", fg="#39753c", 
                     font=("Roboto", 12)).pack(anchor="w", padx=40)
             tk.OptionMenu(window, variable, *options).pack(padx=40, pady=5, fill="x")
 
@@ -529,61 +527,144 @@ class VehicleProfile:
                 messagebox.showerror("Eroare", "Nu s-a putut salva vehiculul.")
 
         tk.Button(window, text="Salvează", font=("Roboto", 12, "bold"),
-                  bg="#B9EF17", fg="#0D0D0D", command=save_profile).pack(pady=20)
+                  bg="#39753c", fg="white", command=save_profile).pack(pady=20)
 
     def afiseaza_vehicule(self):
         if hasattr(self, 'vehicule_frame'):
             self.vehicule_frame.destroy()
 
-        self.vehicule_frame = tk.Frame(self.root, bg="#0D0D0D")
+        self.vehicule_frame = tk.Frame(self.root, bg="white")
         self.vehicule_frame.place(x=10, y=250)
 
         sanitized_email = self.current_user.replace('.', '_')
         try:
-            # Folosim tokenul pentru autentificare
             if self.id_token:
                 vehicule = db.child("vehicule").child(sanitized_email).get(token=self.id_token)
                 if vehicule.each():
                     for v in vehicule.each():
                         info = v.val()
+                        vehicle_id = v.key() 
 
-                        container = tk.Frame(self.vehicule_frame, bg="#1A1C1A", bd=1, relief="solid")
+                        container = tk.Frame(self.vehicule_frame, bg="white", bd=1, relief="solid")
                         container.pack(fill="x", padx=30, pady=5)
 
                         expanded = tk.BooleanVar(value=False)
 
+                       
+                        header_frame = tk.Frame(container, bg="white")
+                        header_frame.pack(fill="x", padx=10, pady=5)
+
                         def toggle(c=container, i=info, e=expanded):
                             e.set(not e.get())
                             if e.get():
-                                d = tk.Frame(c, bg="#262626")
+                                d = tk.Frame(c, bg="white")
                                 d.pack(fill="x", padx=20, pady=5)
-                                tk.Label(d, text=f"Baterie: {i.get('baterie_kWh')} kWh", bg="#262626", fg="white").pack(anchor="w")
-                                tk.Label(d, text=f"Vechime: {i.get('vechime_ani')} ani", bg="#262626", fg="white").pack(anchor="w")
-                                tk.Label(d, text=f"Încărcător: {i.get('tip_incarcator')}", bg="#262626", fg="white").pack(anchor="w")
-                                tk.Label(d, text=f"Tip Utilizator: {i.get('user_type')}", bg="#262626", fg="white").pack(anchor="w")
+                                tk.Label(d, text=f"Baterie: {i.get('baterie_kWh')} kWh", bg="white", fg="black").pack(anchor="w")
+                                tk.Label(d, text=f"Vechime: {i.get('vechime_ani')} ani", bg="white", fg="black").pack(anchor="w")
+                                tk.Label(d, text=f"Încărcător: {i.get('tip_incarcator')}", bg="white", fg="black").pack(anchor="w")
+                                tk.Label(d, text=f"Tip Utilizator: {i.get('user_type')}", bg="white", fg="black").pack(anchor="w")
                                 c.detail_frame = d
                             else:
                                 if hasattr(c, 'detail_frame'):
                                     c.detail_frame.destroy()
 
-                        b = tk.Button(container, text=f"{info.get('model')} ▼", anchor="w", bg="#B9EF17", fg="#0D0D0D",
+                        
+                        b = tk.Button(header_frame, text=f"{info.get('model')} ▼", anchor="w", bg="#39753c", fg="white",
                                     relief="flat", font=("Roboto", 12, "bold"), command=toggle)
-                        b.pack(fill="x", padx=10, pady=5)
+                        b.pack(side="left", fill="x", expand=True)
+
+                        
+                        def edit_vehicle():
+                            self.edit_vehicle_window(vehicle_id, info)
+
+                        def delete_vehicle():
+                            if messagebox.askyesno("Confirmare ștergere", 
+                                f"Sunteți sigur că doriți să ștergeți vehiculul {info.get('model')}?"):
+                                try:
+                                    db.child("vehicule").child(sanitized_email).child(vehicle_id).remove(token=self.id_token)
+                                    messagebox.showinfo("Succes", "Vehicul șters cu succes!")
+                                    self.afiseaza_vehicule()  
+                                except Exception as e:
+                                    messagebox.showerror("Eroare", f"Nu s-a putut șterge vehiculul: {str(e)}")
+
+                        edit_btn = tk.Button(header_frame, text="Editare", bg="#39753c", fg="white",
+                                          command=edit_vehicle, font=("Roboto", 10))
+                        edit_btn.pack(side="right", padx=5)
+
+                        delete_btn = tk.Button(header_frame, text="Sterge", bg="#39753c", fg="white",
+                                            command=delete_vehicle, font=("Roboto", 10))
+                        delete_btn.pack(side="right", padx=5)
+
                 else:
                     tk.Label(self.vehicule_frame, text="Niciun vehicul adăugat încă.",
-                            bg="#0D0D0D", fg="white", font=("Roboto", 12)).pack()
+                            bg="#39753c", fg="white", font=("Roboto", 12)).pack()
             else:
                 messagebox.showerror("Eroare", "Nu sunteți autentificat. Vă rugăm să vă autentificați din nou.")
         except Exception as e:
             print("Eroare la afișare vehicule:", str(e))
             messagebox.showerror("Eroare", f"Eroare la încărcarea vehiculelor: {str(e)}")
             tk.Label(self.vehicule_frame, text=f"Eroare la încărcarea vehiculelor: {str(e)}",
-                     bg="#0D0D0D", fg="red", font=("Roboto", 12)).pack()
+                     bg="#39753c", fg="red", font=("Roboto", 12)).pack()
+
+    def edit_vehicle_window(self, vehicle_id, current_info):
+        """Deschide fereastra de editare pentru un vehicul"""
+        window = tk.Toplevel(self.root)
+        window.title("Editare Vehicul")
+        window.geometry("400x600")
+        window.configure(bg="white")
+        window.transient(self.root)
+        window.grab_set()
+
+        tk.Label(window, text="Editare Vehicul", font=("Roboto", 16, "bold"),
+                 bg="white", fg="#39753c").pack(pady=20)
+
+       
+        def create_dropdown(label_text, options, variable):
+            tk.Label(window, text=label_text, bg="white", fg="#39753c", 
+                    font=("Roboto", 12)).pack(anchor="w", padx=40)
+            tk.OptionMenu(window, variable, *options).pack(padx=40, pady=5, fill="x")
+
+        selected_model = tk.StringVar(value=current_info.get('model', self.vehicle_models[0]))
+        selected_battery = tk.StringVar(value=current_info.get('baterie_kWh', self.battery_kwh_list[0]))
+        selected_age = tk.StringVar(value=current_info.get('vechime_ani', self.vehicle_age_list[0]))
+        selected_charger = tk.StringVar(value=current_info.get('tip_incarcator', self.charger_types[0]))
+        user_types = ["Long-Distance Traveler", "Commuter", "Casual Driver"]
+        selected_user_type = tk.StringVar(value=current_info.get('user_type', user_types[0]))
+
+        create_dropdown("Model Vehicul:", self.vehicle_models, selected_model)
+        create_dropdown("Capacitate Baterie (kWh):", self.battery_kwh_list, selected_battery)
+        create_dropdown("Vechime Vehicul (ani):", self.vehicle_age_list, selected_age)
+        create_dropdown("Tip Încărcător:", self.charger_types, selected_charger)
+        create_dropdown("Tip Utilizator:", user_types, selected_user_type)
+
+        def save_changes():
+            new_data = {
+                "model": selected_model.get(),
+                "baterie_kWh": selected_battery.get(),
+                "vechime_ani": selected_age.get(),
+                "tip_incarcator": selected_charger.get(),
+                "user_type": selected_user_type.get()
+            }
+
+            sanitized_email = self.current_user.replace('.', '_')
+            try:
+                if self.id_token:
+                    db.child("vehicule").child(sanitized_email).child(vehicle_id).update(new_data, token=self.id_token)
+                    messagebox.showinfo("Succes", "Vehicul actualizat cu succes!")
+                    window.destroy()
+                    self.afiseaza_vehicule()
+                else:
+                    messagebox.showerror("Eroare", "Nu sunteți autentificat.")
+            except Exception as e:
+                messagebox.showerror("Eroare", f"Nu s-a putut actualiza vehiculul: {str(e)}")
+
+        tk.Button(window, text="Salvează Modificările", font=("Roboto", 12, "bold"),
+                  bg="#39753c", fg="white", command=save_changes).pack(pady=20)
 
 
 if __name__ == "__main__":
     root = tk.Tk()
-    # Test credentials for direct execution
+   
     test_email = "test@example.com"
     test_password = "test123"
     app = VehicleProfile(root, test_email, test_password)

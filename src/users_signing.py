@@ -1,6 +1,5 @@
 from tkinter import messagebox
 
-# Importuri relative sau absolute în funcție de context
 try:
     from .authentification_config import auth, db
 except ImportError:
@@ -21,13 +20,13 @@ class UserSigning:
             return False
 
         try:
-            # Verifică dacă email-ul există deja
+          
             try:
                 auth.sign_in_with_email_and_password(email, "dummy_password")
                 messagebox.showerror("Eroare", "Acest email este deja înregistrat!")
                 return False
             except:
-                pass  # Email-ul nu există, putem continua cu înregistrarea
+                pass  
 
             user = auth.create_user_with_email_and_password(email, password)
             print("Utilizator creat cu succes!")

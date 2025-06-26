@@ -50,11 +50,11 @@ class ChargingCost:
         self.root.title("Estimare Cost Încărcare")
         self.root.geometry("1100x700")
 
-        # Încarcă modelul și scalerul
+      
         self.model = joblib.load("modele/mlpr_charging_cost_model/mlpr_model.pkl")
         self.scaler = joblib.load("modele/mlpr_charging_cost_model/scaler.pkl")
 
-        # Încarcă structura de features
+       
         self.features = [
             "Battery Capacity (kWh)", "Energy Consumed (kWh)", "Charging Rate (kW)", "Charging Duration (hours)", "Time of Day", "Day of Week",
             "State of Charge (Start %)", "State of Charge (End %)", "Distance Driven (since last charge) (km)",
@@ -70,19 +70,18 @@ class ChargingCost:
             "Total Charge Gained", "Charger Efficiency", "Temperature Adjusted Consumption"
         ]
 
-        # Fundal
-        self.bg_image_pil = Image.open("images/green_wave.jpeg").resize((1100, 700), Image.Resampling.LANCZOS)
+       
+        self.bg_image_pil = Image.open("images/white_green_wave.png").resize((1100, 700), Image.Resampling.LANCZOS)
         self.background_image = ImageTk.PhotoImage(self.bg_image_pil)
         self.background_label = tk.Label(self.root, image=self.background_image)
         self.background_label.place(relwidth=1, relheight=1)
 
-        # Buton înapoi la meniu
         back_button = tk.Button(
             self.root,
-            text="↩ Înapoi la Meniu",
+            text="Înapoi la Meniu",
             font=("Roboto", 12),
-            bg="#B9EF17",
-            fg="#0D0D0D",
+            bg="#39753c",
+            fg="white",
             command=self.back_to_menu
         )
         back_button.place(x=935, y=30)
@@ -92,15 +91,15 @@ class ChargingCost:
 
     def create_widgets(self):
         tk.Label(self.root, text="Estimare Cost Încărcare", font=("Roboto", 20, "bold"),
-                 bg="#0D0D0D", fg="#B9EF17").place(x=50, y=150)
-        self.logo_image = PhotoImage(file="images/plugin.png")
-        tk.Label(self.root, image=self.logo_image, bg="#0D0D0D").place(x=30, y=30)
+                 bg="white", fg="#39753c").place(x=50, y=150)
+        self.logo_image = PhotoImage(file="images/plugin_1.png")
+        tk.Label(self.root, image=self.logo_image, bg="white").place(x=30, y=30)
         tk.Label(self.root, text="EVcast", font=("Roboto", 24, "bold"),
-                 bg="#0D0D0D", fg="white").place(x=110, y=41)
+                 bg="white", fg="#39753c").place(x=110, y=41)
         tk.Label(self.root, text=f"Utilizator: {self.current_user}", font=("Roboto", 12),
-                 bg="#0D0D0D", fg="white").place(x=700, y=30)
+                 bg="white", fg="black").place(x=700, y=30)
 
-        form_frame = tk.Frame(self.root, bg="#1A1C1A", bd=2, relief="solid")
+        form_frame = tk.Frame(self.root, bg="white", bd=2, relief="solid")
         form_frame.place(x=50, y=200, width=400, height=500)
 
         self.entries = {}
@@ -112,9 +111,9 @@ class ChargingCost:
             "Distance Driven (since last charge) (km)"
         ]
         for i, field in enumerate(fields):
-            tk.Label(form_frame, text=field, bg="#1A1C1A", fg="white",
+            tk.Label(form_frame, text=field, bg="white", fg="black",
                     font=("Roboto", 10)).place(x=20, y=20 + i*45)
-            entry = tk.Entry(form_frame, bg="#262626", fg="white",
+            entry = tk.Entry(form_frame, bg="white", fg="black",
                            font=("Roboto", 10))
             entry.place(x=20, y=45 + i*45, width=360)
             self.entries[field] = entry
@@ -123,19 +122,19 @@ class ChargingCost:
             form_frame,
             text="Estimează Costul",
             font=("Roboto", 12, "bold"),
-            bg="#B9EF17",
-            fg="#0D0D0D",
+            bg="#39753c",
+            fg="white",
             command=self.estimate_cost
         )
-        estimate_button.place(x=20, y=470, width=360)
+        estimate_button.place(x=20, y=370, width=360)
 
-        info_frame = tk.Frame(self.root, bg="#1A1C1A", bd=2, relief="solid")
+        info_frame = tk.Frame(self.root, bg="white", bd=2, relief="solid")
         info_frame.place(x=500, y=200, width=500, height=400)
         self.info_label = tk.Label(
             info_frame,
             text="Date vehicul și mediu:",
-            bg="#1A1C1A",
-            fg="white",
+            bg="white",
+            fg="black",
             font=("Roboto", 12),
             justify="left",
             anchor="w"
@@ -144,8 +143,8 @@ class ChargingCost:
         self.result_label = tk.Label(
             info_frame,
             text="",
-            bg="#1A1C1A",
-            fg="#B9EF17",
+            bg="white",
+            fg="#39753c",
             font=("Roboto", 16, "bold"),
             justify="center"
         )
@@ -158,10 +157,10 @@ class ChargingCost:
                 vehicles = db.child("vehicule").child(sanitized_email).get(token=self.id_token)
                 if vehicles.each():
                     self.vehicle_var = StringVar()
-                    vehicle_frame = tk.Frame(self.root, bg="#1A1C1A")
-                    vehicle_frame.place(x=50, y=620, width=400, height=50)
+                    vehicle_frame = tk.Frame(self.root, bg="white")
+                    vehicle_frame.place(x=70, y=500, width=350, height=50)
                     tk.Label(vehicle_frame, text="Selectează vehicul:",
-                            bg="#1A1C1A", fg="white").pack(side="left", padx=10)
+                            bg="white", fg="black").pack(side="left", padx=10)
                     vehicle_names = [v.val()['model'] for v in vehicles.each()]
                     vehicle_dropdown = OptionMenu(vehicle_frame, self.vehicle_var,
                                                 *vehicle_names,
@@ -198,7 +197,7 @@ class ChargingCost:
 
     def estimate_cost(self):
         try:
-            # Mapping pentru input
+           
             field_mapping = {
                 "Battery Capacity (kWh)": "Battery Capacity (kWh)",
                 "Charging Rate (kW)": "Charging Rate (kW)",
@@ -242,13 +241,13 @@ class ChargingCost:
                     elif "Temperatură" in key:
                         features["Temperature (°C)"] = float(value.split()[0].replace("°C", ""))
 
-            # Calculăm energia consumată și SOC final
+        
             rate = features["Charging Rate (kW)"]
             duration = features["Charging Duration (hours)"]
             capacity = features["Battery Capacity (kWh)"]
             soc_start = features["State of Charge (Start %)"]
 
-            # Calculăm energia maximă posibilă și SOC final
+            
             soc_diff_possible = 100.0 - soc_start
             max_possible_energy = (soc_diff_possible / 100) * capacity
             energy_consumed = min(rate * duration, max_possible_energy)
@@ -258,56 +257,55 @@ class ChargingCost:
             features["Energy Consumed (kWh)"] = energy_consumed
             features["State of Charge (End %)"] = soc_end
 
-            # One-hot encoding
+          
             input_dict = {col: 0 for col in self.features}
             for k, v in features.items():
                 if k in input_dict:
                     input_dict[k] = v
 
-            # Vehicle Model
+            
             for col in input_dict:
                 if col.startswith("Vehicle Model_") and vehicul.get("model") is not None:
                     model_name = col.replace("Vehicle Model_", "")
                     if model_name == vehicul["model"]:
                         input_dict[col] = 1
 
-            # User Type
+          
             for col in input_dict:
                 if col.startswith("User Type_") and vehicul.get("user_type") is not None:
                     user_type = col.replace("User Type_", "")
                     if user_type == vehicul["user_type"]:
                         input_dict[col] = 1
 
-            # Charger Type
+          
             for col in input_dict:
                 if col.startswith("Charger Type_") and vehicul.get("charger_type") is not None:
                     charger_type = col.replace("Charger Type_", "")
                     if charger_type == vehicul["charger_type"]:
                         input_dict[col] = 1
 
-            # Location (default Houston)
+          
             input_dict["Charging Station Location_Houston"] = 1
 
-            # Feature engineering
             input_dict = compute_derived_features(input_dict)
 
-            # Pregătește inputul pentru model
+          
             X = pd.DataFrame([input_dict])
             X = X.reindex(columns=self.features, fill_value=0)
             print("[DEBUG] Input transmis modelului:")
             for col in X.columns:
                 print(f"  {col}: {X.iloc[0][col]}")
 
-            # Predicție cost
+            
             X_scaled = self.scaler.transform(X)
             predicted_cost = self.model.predict(X_scaled)[0]
 
-            # Calculăm tariful realist
+          
             charger_type = vehicul.get("charger_type", "Level 2")
             tariff = estimate_realistic_tariff(charger_type)
             realistic_cost = energy_consumed * tariff
 
-            # Afișăm rezultatele
+        
             result_text = f"Cost estimat încărcare:\n{predicted_cost:.2f} USD\n\n"
             result_text += f"Cost realist (tarif {tariff:.2f} USD/kWh):\n{realistic_cost:.2f} USD\n\n"
             result_text += f"Stare de încărcare estimată:\n{soc_end:.2f}%"

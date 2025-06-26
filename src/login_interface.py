@@ -3,15 +3,12 @@ from tkinter import messagebox
 from tkinter import PhotoImage
 from PIL import Image, ImageTk
 from users_signing import UserSigning
-import subprocess
+
 import os
-import tempfile
-import wave
-import re
+
 import numpy as np
-import whisper
-import unicodedata
-# Importuri relative sau absolute în funcție de context
+
+
 try:
     from .users_signing import UserSigning
     from .Menu import MenuInterface
@@ -19,12 +16,14 @@ except ImportError:
     from users_signing import UserSigning
     from Menu import MenuInterface
 
-# Constante pentru stilizare
+
 COLORS = {
     "BACKGROUND": "#0D0D0D",
+    "INPUT_BG": "#FFFFFF",
     "SECONDARY_BG": "#1A1C1A",
-    "ACCENT": "#B9EF17",
-    "TEXT": "white"
+    "ACCENT": "#39753c",
+    "TEXT": "black",
+    "INPUT_BG": "#FFFFFF"  
 }
 
 FONTS = {
@@ -40,7 +39,7 @@ class LoginInterface:
         self.root.title("Login & Register")
         self.root.geometry("1100x700")
         
-        # Obține calea către directorul rădăcină al proiectului
+   
         self.current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.images_dir = os.path.join(self.current_dir, "images")
         
@@ -48,18 +47,12 @@ class LoginInterface:
         self.user_signing = UserSigning()
         self.create_widgets()
         
-        # Modifică inițializarea modelului Whisper
-        self.model = whisper.load_model("base", device="cpu")  # Specifică explicit CPU
-        self.is_recording = False
-        self.recording_thread = None
-        self.audio_data = []
-        self.sample_rate = 16000
-        duration = 10  # secunde
+
          
 
     def setup_background(self):
-        """Configurează imaginea de fundal"""
-        bg_path = os.path.join(self.images_dir, "green_wave.jpg")
+       
+        bg_path = os.path.join(self.images_dir, "white_green_wave.png")
         self.bg_image_pil = Image.open(bg_path)
         self.bg_image_pil = self.bg_image_pil.resize((1100, 700), Image.Resampling.LANCZOS)
         self.background_image = ImageTk.PhotoImage(self.bg_image_pil)
@@ -67,26 +60,34 @@ class LoginInterface:
         self.background_label.place(relwidth=1, relheight=1)
 
     def create_header(self):
-        """Creează header-ul aplicației"""
+       
         logo_path = os.path.join(self.images_dir, "plugin.png")
+        image = Image.open(logo_path)
+        icon_image = tk.PhotoImage(file=logo_path)
         self.logo_image = PhotoImage(file=logo_path)
-        self.logo_label = tk.Label(self.root, image=self.logo_image, bg=COLORS["BACKGROUND"])
-        self.logo_label.place(x=30, y=30)
+        self.logo_label = tk.Label(self.root, image=self.logo_image, bg=COLORS["INPUT_BG"])
+        self.logo_label.place(x=40, y=40)
+        self.root.iconphoto(False, icon_image)
+        ico_path = os.path.join(self.images_dir, "plugin.ico")
+        self.root.iconbitmap(ico_path)
+
+        
+        self.icon_image = icon_image
 
         self.label_app_name = tk.Label(
             self.root, 
             text="EVcast", 
             font=FONTS["APP_NAME"], 
-            bg=COLORS["BACKGROUND"], 
-            fg=COLORS["TEXT"]
+            bg=COLORS["INPUT_BG"], 
+            fg=COLORS["ACCENT"]
         )
-        self.label_app_name.place(x=110, y=41)
+        self.label_app_name.place(x=490, y=41)
 
     def create_input_fields(self):
-        """Creează câmpurile de input"""
+       
         fields = [
             ("Email:", "email"),
-            ("Parolă:", "password", True),
+            ("Password:", "password", True),
             ("Username:", "username")
         ]
 
@@ -98,21 +99,34 @@ class LoginInterface:
                 self.root, 
                 text=label_text, 
                 font=FONTS["LABEL"], 
-                bg=COLORS["SECONDARY_BG"], 
+                bg=COLORS["INPUT_BG"],
                 fg=COLORS["ACCENT"]
             )
-            label.place(x=50, y=y_pos)
+            label.place(x=280, y=y_pos)
 
+    
+            entry_border = tk.Frame(
+                self.root,
+                bg=COLORS["ACCENT"],
+                highlightthickness=0
+            )
+            entry_border.place(x=400, y=y_pos, width=300, height=30)
+
+            
             entry = tk.Entry(
-                self.root, 
+                entry_border,
                 font=FONTS["LABEL"], 
-                bg=COLORS["SECONDARY_BG"], 
-                fg=COLORS["TEXT"],
-                insertbackground=COLORS["TEXT"],
+                bg=COLORS["INPUT_BG"],
+                fg=COLORS["BACKGROUND"],
+                insertbackground=COLORS["BACKGROUND"],
+                bd=0,  
                 show="*" if args and args[0] else None
             )
-            entry.place(x=200, y=y_pos, width=300, height=30)
+            entry.place(x=2, y=2, width=296, height=26) 
+
+           
             setattr(self, f"entry_{field_name}", entry)
+
 
     def create_buttons(self):
         """Creează butoanele"""
@@ -121,42 +135,38 @@ class LoginInterface:
             text="Register", 
             font=FONTS["BUTTON"], 
             bg=COLORS["ACCENT"],
-            fg=COLORS["BACKGROUND"], 
+            fg=COLORS["INPUT_BG"], 
             command=self.register_user
         )
-        self.button_register.place(x=200, y=350, width=100, height=40)
+        self.button_register.place(x=400, y=350, width=130, height=40)
 
         self.button_login = tk.Button(
             self.root, 
             text="Login", 
             font=FONTS["BUTTON"], 
             bg=COLORS["ACCENT"], 
-            fg=COLORS["BACKGROUND"],
+            fg=COLORS["INPUT_BG"],
             command=self.login_user
         )
-        self.button_login.place(x=350, y=350, width=100, height=40)
+        self.button_login.place(x=570, y=350, width=130, height=40)
 
     def create_widgets(self):
         """Creează toate widget-urile interfeței"""
         # Titlu
         self.label_title = tk.Label(
             self.root, 
-            text="Login", 
+            text="LOGIN", 
             font=FONTS["TITLE"], 
-            bg=COLORS["BACKGROUND"], 
+            bg=COLORS["INPUT_BG"], 
             fg=COLORS["ACCENT"]
         )
-        self.label_title.place(x=50, y=150)
+        self.label_title.place(x=500, y=120)
 
         self.create_header()
         self.create_input_fields()
         self.create_buttons()
 
-        # Imagine EV
-        ev_path = os.path.join(self.images_dir, "ev.png")
-        self.power_image = PhotoImage(file=ev_path)
-        self.power_label = tk.Label(self.root, image=self.power_image, bg=COLORS["BACKGROUND"])
-        self.power_label.place(x=800, y=50)
+
 
     def register_user(self):
         """Gestionează înregistrarea utilizatorului"""

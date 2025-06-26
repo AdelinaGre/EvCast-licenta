@@ -3,12 +3,12 @@ import pandas as pd
 
 def plot_features(df, x_feature, y_feature, x_label=None, y_label=None, title=None, show=True):
     """
-    Creează un scatter plot pentru orice două coloane din DataFrame.
-    - df: DataFrame-ul cu datele
-    - x_feature: numele coloanei pentru axa X
-    - y_feature: numele coloanei pentru axa Y
-    - x_label, y_label, title: etichete opționale
-    - show: dacă True, afișează graficul; altfel, îl salvează ca PNG
+    se creează un scatter plot pentru orice două coloane din DataFrame.
+     df: DataFrame-ul cu datele
+     x_feature: numele coloanei pentru axa X
+     y_feature: numele coloanei pentru axa Y
+     x_label, y_label, title: etichete opționale
+     show: dacă True, afișează graficul; altfel, îl salvează ca PNG
     """
     if x_feature not in df.columns or y_feature not in df.columns:
         raise ValueError(f"Coloanele {x_feature} și/sau {y_feature} nu există în DataFrame.")
@@ -23,9 +23,9 @@ def plot_features(df, x_feature, y_feature, x_label=None, y_label=None, title=No
     else:
         plt.savefig(f"{y_feature}_vs_{x_feature}.png")
 
-# Exemplu de utilizare (doar pentru test):
+
 if __name__ == "__main__":
-    # Exemplu de date
+
     data = {
         'energy_consumed': [10, 20, 30, 40, 50],
         'durata_estimata_ore': [1, 2, 2.5, 3, 4],

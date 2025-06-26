@@ -6,7 +6,7 @@ from tkinter import ttk
 import joblib
 import numpy as np
 
-# Încarcă modelele
+
 model_km = tf.keras.models.load_model("modele/seq_layers_km_model.h5", custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
 model_hours = tf.keras.models.load_model("modele/seq_layers_hours_model.h5", custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
 scaler_km_hours = joblib.load("modele/scaler_km_h.pkl")
@@ -68,23 +68,23 @@ def create_estimation_interface(root):
     road_type_menu.grid(row=4, column=1, padx=10, pady=5)
 
     def predict_distance():
-        # Get values from UI
+        
         state_of_charge = float(entry_state_of_charge.get())
         battery_capacity = float(entry_battery_capacity.get())
         vehicle_age = float(entry_vehicle_age.get())
         outside_temperature = float(entry_outside_temperature.get())
         road_type = road_type_var.get()
 
-        # Prepare input for ML models
+        
         user_input = {
             "Battery Capacity (kWh)": battery_capacity,
-            "Energy Consumed (kWh)": 20,  # Default value
-            "Charging Rate (kW)": 34,     # Default value
-            "Time of Day": 14,            # Default value
-            "Day of Week": 3,             # Default value
-            "State of Charge (Start %)": state_of_charge - 10,  # Assuming 10% difference
+            "Energy Consumed (kWh)": 20,  
+            "Charging Rate (kW)": 34,     
+            "Time of Day": 14,            
+            "Day of Week": 3,            
+            "State of Charge (Start %)": state_of_charge - 10,  
             "State of Charge (End %)": state_of_charge,
-            "Distance Driven (since last charge) (km)": 120,    # Default value
+            "Distance Driven (since last charge) (km)": 120,    
             "Temperature (°C)": outside_temperature,
             "Vehicle Age (years)": vehicle_age,
             "Vehicle Model_BMW i3": 0, "Vehicle Model_Chevy Bolt": 0, "Vehicle Model_Hyundai Kona": 0,
@@ -96,7 +96,7 @@ def create_estimation_interface(root):
             "Charger Type_DC Fast Charger": 1, "Charger Type_Level 1": 0, "Charger Type_Level 2": 0
         }
 
-        # Prepare features and get ML predictions
+        
         full_features = prepare_features_from_user_input(user_input)
         full_features_df = pd.DataFrame([full_features])
         required_order = scaler_km_hours.feature_names_in_.tolist()
@@ -104,7 +104,7 @@ def create_estimation_interface(root):
         
         ml_km, ml_hours = predict_km_and_hours_remaining(full_features_df)
 
-        # Calculate logical predictions
+      
         base_consumption_per_km = 0.1
         age_factor = 1 + (vehicle_age * 0.02)
         temp_factor = 1.2 if outside_temperature < 0 else (1.15 if outside_temperature > 30 else 1.0)
@@ -119,7 +119,7 @@ def create_estimation_interface(root):
         estimated_duration = estimated_distance / avg_speed
         battery_drain_rate = energy_left / estimated_duration if estimated_duration > 0 else 0
 
-        # Update result label with both predictions
+       
         result_label.config(text=f"=== Estimări din modele ML ===\n"
                                 f"Km rămași estimați (ML): {ml_km} km\n"
                                 f"Ore rămase estimate (ML): {ml_hours} ore\n\n"
@@ -131,7 +131,7 @@ def create_estimation_interface(root):
 
     predict_button = tk.Button(root, text="Prezice", command=predict_distance, font=("Arial", 14), bg="lightblue", padx=20, pady=5)
     predict_button.pack(pady=10)
-
+    
     result_label = tk.Label(root, text="", font=("Arial", 12), justify=tk.LEFT, bg="#f0f0f0")
     result_label.pack()
 
