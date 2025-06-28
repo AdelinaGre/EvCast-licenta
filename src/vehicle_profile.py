@@ -3,8 +3,8 @@ print(sys.executable)
 import tkinter as tk
 from tkinter import messagebox, PhotoImage, StringVar, OptionMenu
 from PIL import Image, ImageTk
-from users_signing import UserSigning
-from authentification_config import db, auth
+from .users_signing import UserSigning
+from .authentification_config import db, auth
 import pandas as pd
 import speech_recognition as sr
 import re
@@ -98,7 +98,7 @@ class VehicleProfile:
         """Închide interfața curentă și revine la meniu"""
         for widget in self.root.winfo_children():
             widget.destroy()
-        from Menu import MenuInterface
+        from .Menu import MenuInterface
         MenuInterface(self.root, self.current_user, self.id_token)
 
     def profil_vehicul(self):

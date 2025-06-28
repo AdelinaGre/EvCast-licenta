@@ -4,7 +4,7 @@ from PIL import Image, ImageTk
 import pandas as pd
 import os
 from datetime import datetime
-from authentification_config import db, auth
+from .authentification_config import db, auth
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -441,7 +441,7 @@ class ChargingDuration:
         for widget in self.root.winfo_children():
             widget.destroy()
             
-        from Menu import MenuInterface
+        from .Menu import MenuInterface
         MenuInterface(self.root, self.current_user, self.id_token)
 
     def record_field_value(self, field):

@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import PhotoImage
 from PIL import Image, ImageTk
-from users_signing import UserSigning
+from .users_signing import UserSigning
 
 import os
 
@@ -13,8 +13,8 @@ try:
     from .users_signing import UserSigning
     from .Menu import MenuInterface
 except ImportError:
-    from users_signing import UserSigning
-    from Menu import MenuInterface
+    from .users_signing import UserSigning
+    from .Menu import MenuInterface
 
 
 COLORS = {

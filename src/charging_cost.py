@@ -6,7 +6,7 @@ import numpy as np
 import os
 import joblib
 from datetime import datetime
-from authentification_config import db, auth
+from .authentification_config import db, auth
 
 def estimate_realistic_tariff(charger_type):
     """Estimează tariful realist în funcție de tipul de încărcător"""
@@ -319,7 +319,7 @@ class ChargingCost:
     def back_to_menu(self):
         for widget in self.root.winfo_children():
             widget.destroy()
-        from Menu import MenuInterface
+        from .Menu import MenuInterface
         MenuInterface(self.root, self.current_user, self.id_token)
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ from tkinter import messagebox
 try:
     from .authentification_config import auth, db
 except ImportError:
-    from authentification_config import auth, db
+    from .authentification_config import auth, db
 
 
 class UserSigning:

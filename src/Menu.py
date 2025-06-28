@@ -12,9 +12,9 @@ from pathlib import Path
 import threading
 from openai import OpenAI
 from dotenv import load_dotenv
-from graph_generator import plot_features
+from .graph_generator import plot_features
 import pandas as pd
-from authentification_config import db, auth
+from .authentification_config import db, auth
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import unicodedata
 import re
@@ -28,8 +28,8 @@ try:
     from .users_signing import UserSigning
     from .vehicle_profile import VehicleProfile
 except ImportError:
-    from users_signing import UserSigning
-    from vehicle_profile import VehicleProfile
+    from .users_signing import UserSigning
+    from .vehicle_profile import VehicleProfile
 
 
 COLORS = {
@@ -152,7 +152,7 @@ class MenuInterface:
        
         self.update_info_display()
         
-        
+       
         self.save_current_data()
         
        
@@ -461,27 +461,19 @@ class MenuInterface:
             widget.destroy()
             
        
-        from charging_duration import ChargingDuration
+        from .charging_duration import ChargingDuration
         ChargingDuration(self.root, self.current_user, self.id_token)
 
     def estimare_cost(self):
        
         for widget in self.root.winfo_children():
             widget.destroy()
-        from charging_cost import ChargingCost
+        from .charging_cost import ChargingCost
         ChargingCost(self.root, self.current_user, self.id_token)
 
     def estimare_h_km_ramase(self):
-      
-        import tensorflow as tf
-        import joblib
-        model_km = tf.keras.models.load_model("modele/seq_layers_km_model.h5", custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
-        model_hours = tf.keras.models.load_model("modele/seq_layers_hours_model.h5", custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
-        scaler_km_hours = joblib.load("modele/scaler_km_h.pkl")
-
-        from estimate_km_hours_ramase import create_estimation_interface
-        top=tk.Toplevel(self.root)
-        create_estimation_interface(top)
+        from .estimate_km_hours_ramase import KmHoursEstimatorApp
+        KmHoursEstimatorApp().run()
 
     def toggle_voice_command(self):
        
@@ -744,7 +736,7 @@ class MenuInterface:
                             fig.patch.set_facecolor('white')
                             ax.set_facecolor('white')
 
-                            scatter = ax.scatter(df[f1], df[f2], color='#B9EF17', s=50)
+                            scatter = ax.scatter(df[f1], df[f2], color='black', s=50)
                             ax.plot(df[f1], df[f2], color='black', alpha=0.5, linestyle='-')
 
                             ax.set_xlabel(f1, color='black')
