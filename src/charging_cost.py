@@ -41,6 +41,17 @@ def compute_derived_features(input_data):
     input_data_updated.update(derived)
     return input_data_updated
 
+def get_charging_rate_by_type(charger_type):
+    """Returnează rata de încărcare tipică pentru tipul de încărcător"""
+    if charger_type == "Level 1":
+        return 1.5  # Rata medie pentru Level 1 (0.5-2 kW)
+    elif charger_type == "Level 2":
+        return 7.0  # Rata medie pentru Level 2 (3-22 kW)
+    elif charger_type == "DC Fast Charger":
+        return 50.0  # Rata medie pentru DC Fast Charger (22-350 kW)
+    else:
+        return 7.0  # Default la Level 2
+
 class ChargingCost:
     def __init__(self, root, current_user, id_token):
         print("[DEBUG] ChargingCost window opened")
@@ -100,12 +111,10 @@ class ChargingCost:
                  bg="white", fg="black").place(x=700, y=30)
 
         form_frame = tk.Frame(self.root, bg="white", bd=2, relief="solid")
-        form_frame.place(x=50, y=200, width=400, height=500)
+        form_frame.place(x=50, y=200, width=400, height=400)
 
         self.entries = {}
         fields = [
-            "Battery Capacity (kWh)",
-            "Charging Rate (kW)",
             "Charging Duration (hours)",
             "State of Charge (Start %)",
             "Distance Driven (since last charge) (km)"
@@ -126,7 +135,7 @@ class ChargingCost:
             fg="white",
             command=self.estimate_cost
         )
-        estimate_button.place(x=20, y=370, width=360)
+        estimate_button.place(x=20, y=230, width=360)
 
         info_frame = tk.Frame(self.root, bg="white", bd=2, relief="solid")
         info_frame.place(x=500, y=200, width=500, height=400)
@@ -145,7 +154,7 @@ class ChargingCost:
             text="",
             bg="white",
             fg="#39753c",
-            font=("Roboto", 16, "bold"),
+            font=("Roboto", 12, "bold"),
             justify="center"
         )
         self.result_label.place(x=20, y=200)
@@ -199,8 +208,6 @@ class ChargingCost:
         try:
            
             field_mapping = {
-                "Battery Capacity (kWh)": "Battery Capacity (kWh)",
-                "Charging Rate (kW)": "Charging Rate (kW)",
                 "Charging Duration (hours)": "Charging Duration (hours)",
                 "State of Charge (Start %)": "State of Charge (Start %)",
                 "Distance Driven (since last charge) (km)": "Distance Driven (since last charge) (km)"
@@ -241,6 +248,9 @@ class ChargingCost:
                     elif "Temperatură" in key:
                         features["Temperature (°C)"] = float(value.split()[0].replace("°C", ""))
 
+            # Determină rata de încărcare automat în funcție de tipul de încărcător
+            charger_type = vehicul.get("charger_type", "Level 2")
+            features["Charging Rate (kW)"] = get_charging_rate_by_type(charger_type)
         
             rate = features["Charging Rate (kW)"]
             duration = features["Charging Duration (hours)"]
@@ -307,9 +317,7 @@ class ChargingCost:
 
         
             result_text = f"Cost estimat încărcare:\n{predicted_cost:.2f} USD\n\n"
-            result_text += f"Cost realist (tarif {tariff:.2f} USD/kWh):\n{realistic_cost:.2f} USD\n\n"
             result_text += f"Stare de încărcare estimată:\n{soc_end:.2f}%"
-            
             self.result_label.config(text=result_text)
 
         except Exception as e:

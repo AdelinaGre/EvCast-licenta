@@ -43,7 +43,7 @@ class VehicleProfile:
        
         back_button = tk.Button(
             self.root,
-            text="↩ Înapoi la Meniu",
+            text=" Înapoi la Meniu",
             font=("Roboto", 12),
             bg="#39753c",
             fg="white",
@@ -67,11 +67,21 @@ class VehicleProfile:
         self.vehicle_models = sorted(df['Vehicle Model'].dropna().unique().tolist())
         self.charger_types = sorted(df['Charger Type'].dropna().unique().tolist())
 
+        # Filtrare și conversie pentru capacitatea bateriei - doar numere întregi
         battery_vals = df['Battery Capacity (kWh)'].dropna().unique().tolist()
-        self.battery_kwh_list = sorted([str(int(v)) if float(v).is_integer() else str(v) for v in battery_vals])
+        battery_integers = []
+        for v in battery_vals:
+            try:
+                val = float(v)
+                if val.is_integer() and val > 0:
+                    battery_integers.append(int(val))
+            except (ValueError, TypeError):
+                continue
+        self.battery_kwh_list = sorted(list(set(battery_integers)))  # Elimină duplicatele și sortează
+        self.battery_kwh_list = [str(v) for v in self.battery_kwh_list]  # Convertește la string
 
-        age_vals = df['Vehicle Age (years)'].dropna().unique().tolist()
-        self.vehicle_age_list = sorted([str(int(v)) if float(v).is_integer() else str(v) for v in age_vals])
+        # Eliminăm lista de vârste vehicul deoarece va fi calculată din data achiziției
+        # self.vehicle_age_list nu mai este necesar
 
     def create_widgets(self):
         tk.Label(self.root, text="Vehicul Profile", font=("Roboto", 20, "bold"),
@@ -481,7 +491,6 @@ class VehicleProfile:
 
         selected_model = tk.StringVar(value=self.vehicle_models[0])
         selected_battery = tk.StringVar(value=self.battery_kwh_list[0])
-        selected_age = tk.StringVar(value=self.vehicle_age_list[0])
         selected_charger = tk.StringVar(value=self.charger_types[0])
         user_types = [
             "Long-Distance Traveler", "Commuter", "Casual Driver"
@@ -490,25 +499,75 @@ class VehicleProfile:
 
         create_dropdown("Model Vehicul:", self.vehicle_models, selected_model)
         create_dropdown("Capacitate Baterie (kWh):", self.battery_kwh_list, selected_battery)
-        create_dropdown("Vechime Vehicul (ani):", self.vehicle_age_list, selected_age)
         create_dropdown("Tip Încărcător:", self.charger_types, selected_charger)
         create_dropdown("Tip Utilizator:", user_types, selected_user_type)
+
+        # Adăugăm câmpurile pentru data achiziției
+        tk.Label(window, text="Data Achiziției:", bg="white", fg="#39753c", 
+                font=("Roboto", 12)).pack(anchor="w", padx=40, pady=(10,0))
+        
+        date_frame = tk.Frame(window, bg="white")
+        date_frame.pack(padx=40, pady=5, fill="x")
+        
+        # Zi
+        tk.Label(date_frame, text="Zi:", bg="white", fg="#39753c", 
+                font=("Roboto", 10)).pack(side="left")
+        day_var = tk.StringVar(value="1")
+        day_entry = tk.Entry(date_frame, textvariable=day_var, width=5, font=("Roboto", 10))
+        day_entry.pack(side="left", padx=(5,10))
+        
+        # Lună
+        tk.Label(date_frame, text="Lună:", bg="white", fg="#39753c", 
+                font=("Roboto", 10)).pack(side="left")
+        month_var = tk.StringVar(value="1")
+        month_entry = tk.Entry(date_frame, textvariable=month_var, width=5, font=("Roboto", 10))
+        month_entry.pack(side="left", padx=(5,10))
+        
+        # An
+        tk.Label(date_frame, text="An:", bg="white", fg="#39753c", 
+                font=("Roboto", 10)).pack(side="left")
+        year_var = tk.StringVar(value="2020")
+        year_entry = tk.Entry(date_frame, textvariable=year_var, width=8, font=("Roboto", 10))
+        year_entry.pack(side="left", padx=(5,0))
 
         def save_profile():
             model = selected_model.get()
             battery = selected_battery.get()
-            age = selected_age.get()
             charger = selected_charger.get()
             user_type = selected_user_type.get()
+            
+            # Validare data achiziției
+            try:
+                day = int(day_var.get())
+                month = int(month_var.get())
+                year = int(year_var.get())
+                
+                if not (1 <= day <= 31 and 1 <= month <= 12 and 1900 <= year <= 2024):
+                    messagebox.showerror("Eroare", "Data achiziției nu este validă.")
+                    return
+                    
+                # Calculăm vârsta vehiculului
+                from datetime import datetime
+                current_year = datetime.now().year
+                vehicle_age = current_year - year
+                
+                if vehicle_age < 0:
+                    messagebox.showerror("Eroare", "Anul achiziției nu poate fi în viitor.")
+                    return
+                    
+            except ValueError:
+                messagebox.showerror("Eroare", "Data achiziției trebuie să conțină numere valide.")
+                return
 
-            if not model or not battery or not age or not charger or not user_type:
+            if not model or not battery or not charger or not user_type:
                 messagebox.showerror("Eroare", "Toate câmpurile sunt obligatorii.")
                 return
 
             vehicle_data = {
                 "model": model,
                 "baterie_kWh": battery,
-                "vechime_ani": age,
+                "vechime_ani": str(vehicle_age),
+                "data_achizitie": f"{day:02d}/{month:02d}/{year}",
                 "tip_incarcator": charger,
                 "user_type": user_type
             }
@@ -517,7 +576,7 @@ class VehicleProfile:
             try:
                 if self.id_token:
                     db.child("vehicule").child(sanitized_email).push(vehicle_data, token=self.id_token)
-                    messagebox.showinfo("Succes", "Vehicul salvat în Firebase.")
+                    messagebox.showinfo("Succes", f"Vehicul salvat în Firebase.\nVârsta calculată: {vehicle_age} ani")
                     window.destroy()
                     self.afiseaza_vehicule()
                 else:
@@ -560,7 +619,8 @@ class VehicleProfile:
                                 d = tk.Frame(c, bg="white")
                                 d.pack(fill="x", padx=20, pady=5)
                                 tk.Label(d, text=f"Baterie: {i.get('baterie_kWh')} kWh", bg="white", fg="black").pack(anchor="w")
-                                tk.Label(d, text=f"Vechime: {i.get('vechime_ani')} ani", bg="white", fg="black").pack(anchor="w")
+                                tk.Label(d, text=f"Data achiziției: {i.get('data_achizitie', 'N/A')}", bg="white", fg="black").pack(anchor="w")
+                                tk.Label(d, text=f"Vârsta: {i.get('vechime_ani')} ani", bg="white", fg="black").pack(anchor="w")
                                 tk.Label(d, text=f"Încărcător: {i.get('tip_incarcator')}", bg="white", fg="black").pack(anchor="w")
                                 tk.Label(d, text=f"Tip Utilizator: {i.get('user_type')}", bg="white", fg="black").pack(anchor="w")
                                 c.detail_frame = d
@@ -610,7 +670,7 @@ class VehicleProfile:
         """Deschide fereastra de editare pentru un vehicul"""
         window = tk.Toplevel(self.root)
         window.title("Editare Vehicul")
-        window.geometry("400x600")
+        window.geometry("400x700")
         window.configure(bg="white")
         window.transient(self.root)
         window.grab_set()
@@ -626,22 +686,84 @@ class VehicleProfile:
 
         selected_model = tk.StringVar(value=current_info.get('model', self.vehicle_models[0]))
         selected_battery = tk.StringVar(value=current_info.get('baterie_kWh', self.battery_kwh_list[0]))
-        selected_age = tk.StringVar(value=current_info.get('vechime_ani', self.vehicle_age_list[0]))
         selected_charger = tk.StringVar(value=current_info.get('tip_incarcator', self.charger_types[0]))
         user_types = ["Long-Distance Traveler", "Commuter", "Casual Driver"]
         selected_user_type = tk.StringVar(value=current_info.get('user_type', user_types[0]))
 
         create_dropdown("Model Vehicul:", self.vehicle_models, selected_model)
         create_dropdown("Capacitate Baterie (kWh):", self.battery_kwh_list, selected_battery)
-        create_dropdown("Vechime Vehicul (ani):", self.vehicle_age_list, selected_age)
         create_dropdown("Tip Încărcător:", self.charger_types, selected_charger)
         create_dropdown("Tip Utilizator:", user_types, selected_user_type)
 
+        # Adăugăm câmpurile pentru data achiziției
+        tk.Label(window, text="Data Achiziției:", bg="white", fg="#39753c", 
+                font=("Roboto", 12)).pack(anchor="w", padx=40, pady=(10,0))
+        
+        date_frame = tk.Frame(window, bg="white")
+        date_frame.pack(padx=40, pady=5, fill="x")
+        
+        # Preia data existentă sau setează valori default
+        existing_date = current_info.get('data_achizitie', '01/01/2020')
+        try:
+            day_str, month_str, year_str = existing_date.split('/')
+            default_day = day_str
+            default_month = month_str
+            default_year = year_str
+        except:
+            default_day = "1"
+            default_month = "1"
+            default_year = "2020"
+        
+        # Zi
+        tk.Label(date_frame, text="Zi:", bg="white", fg="#39753c", 
+                font=("Roboto", 10)).pack(side="left")
+        day_var = tk.StringVar(value=default_day)
+        day_entry = tk.Entry(date_frame, textvariable=day_var, width=5, font=("Roboto", 10))
+        day_entry.pack(side="left", padx=(5,10))
+        
+        # Lună
+        tk.Label(date_frame, text="Lună:", bg="white", fg="#39753c", 
+                font=("Roboto", 10)).pack(side="left")
+        month_var = tk.StringVar(value=default_month)
+        month_entry = tk.Entry(date_frame, textvariable=month_var, width=5, font=("Roboto", 10))
+        month_entry.pack(side="left", padx=(5,10))
+        
+        # An
+        tk.Label(date_frame, text="An:", bg="white", fg="#39753c", 
+                font=("Roboto", 10)).pack(side="left")
+        year_var = tk.StringVar(value=default_year)
+        year_entry = tk.Entry(date_frame, textvariable=year_var, width=8, font=("Roboto", 10))
+        year_entry.pack(side="left", padx=(5,0))
+
         def save_changes():
+            # Validare data achiziției
+            try:
+                day = int(day_var.get())
+                month = int(month_var.get())
+                year = int(year_var.get())
+                
+                if not (1 <= day <= 31 and 1 <= month <= 12 and 1900 <= year <= 2024):
+                    messagebox.showerror("Eroare", "Data achiziției nu este validă.")
+                    return
+                    
+                # Calculăm vârsta vehiculului
+                from datetime import datetime
+                current_year = datetime.now().year
+                vehicle_age = current_year - year
+                
+                if vehicle_age < 0:
+                    messagebox.showerror("Eroare", "Anul achiziției nu poate fi în viitor.")
+                    return
+                    
+            except ValueError:
+                messagebox.showerror("Eroare", "Data achiziției trebuie să conțină numere valide.")
+                return
+
             new_data = {
                 "model": selected_model.get(),
                 "baterie_kWh": selected_battery.get(),
-                "vechime_ani": selected_age.get(),
+                "vechime_ani": str(vehicle_age),
+                "data_achizitie": f"{day:02d}/{month:02d}/{year}",
                 "tip_incarcator": selected_charger.get(),
                 "user_type": selected_user_type.get()
             }
@@ -650,7 +772,7 @@ class VehicleProfile:
             try:
                 if self.id_token:
                     db.child("vehicule").child(sanitized_email).child(vehicle_id).update(new_data, token=self.id_token)
-                    messagebox.showinfo("Succes", "Vehicul actualizat cu succes!")
+                    messagebox.showinfo("Succes", f"Vehicul actualizat cu succes!\nVârsta calculată: {vehicle_age} ani")
                     window.destroy()
                     self.afiseaza_vehicule()
                 else:

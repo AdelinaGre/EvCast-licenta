@@ -473,7 +473,8 @@ class MenuInterface:
 
     def estimare_h_km_ramase(self):
         from .estimate_km_hours_ramase import KmHoursEstimatorApp
-        KmHoursEstimatorApp().run()
+        top = tk.Toplevel(self.root)
+        KmHoursEstimatorApp(top, current_user=self.current_user, id_token=self.id_token, temperatura=self.current_data.get("temperature")).run()
 
     def toggle_voice_command(self):
        

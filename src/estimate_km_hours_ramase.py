@@ -5,11 +5,12 @@ from sklearn.metrics import mean_absolute_error
 import tensorflow as tf
 from keras import layers, models
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, StringVar, OptionMenu
 import numpy as np
+from .authentification_config import db
 
 class KmHoursEstimatorApp:
-    def __init__(self):
+    def __init__(self, root, current_user=None, id_token=None, temperatura=None):
         self.model = None
         self.scaler = None
         self.X_train = None
@@ -17,8 +18,33 @@ class KmHoursEstimatorApp:
         self.y_train = None
         self.y_test = None
         self.model_trained = False
-        self.root = tk.Tk()
+        self.current_user = current_user
+        self.id_token = id_token
+        self.selected_vehicle = None
+        self.vehicle_battery = {}
+        self.vehicle_age = {}
+        self.temperatura = temperatura
+        self.root = root
         self.create_estimation_interface(self.root)
+
+    def load_vehicles(self):
+        if not self.current_user or not self.id_token:
+            return []
+        sanitized_email = self.current_user.replace('.', '_')
+        try:
+            vehicles = db.child("vehicule").child(sanitized_email).get(token=self.id_token)
+            vehicle_names = []
+            if vehicles.each():
+                for v in vehicles.each():
+                    val = v.val()
+                    if 'model' in val and 'baterie_kWh' in val and 'vechime_ani' in val:
+                        vehicle_names.append(val['model'])
+                        self.vehicle_battery[val['model']] = float(val['baterie_kWh'])
+                        self.vehicle_age[val['model']] = float(val['vechime_ani'])
+            return vehicle_names
+        except Exception as e:
+            print(f"Eroare la încărcarea vehiculelor: {str(e)}")
+            return []
 
     def train_model(self):
         try:
@@ -114,26 +140,30 @@ class KmHoursEstimatorApp:
         frame = tk.Frame(root, bg="#f0f0f0")
         frame.pack(pady=20)
 
-        tk.Label(frame, text="Starea bateriei (%):", font=("Arial", 12), bg="#f0f0f0").grid(row=0, column=0, padx=10, pady=5)
+        # Dropdown pentru vehicul
+        tk.Label(frame, text="Selectează vehiculul:", font=("Arial", 12), bg="#f0f0f0").grid(row=0, column=0, padx=10, pady=5)
+        self.vehicle_var = StringVar()
+        vehicle_names = self.load_vehicles()
+        if vehicle_names:
+            self.vehicle_var.set(vehicle_names[0])
+            vehicle_menu = OptionMenu(frame, self.vehicle_var, *vehicle_names)
+        else:
+            self.vehicle_var.set('Niciun vehicul')
+            vehicle_menu = OptionMenu(frame, self.vehicle_var, 'Niciun vehicul')
+        vehicle_menu.config(font=("Arial", 12))
+        vehicle_menu.grid(row=0, column=1, padx=10, pady=5)
+
+        tk.Label(frame, text="Starea bateriei (%):", font=("Arial", 12), bg="#f0f0f0").grid(row=1, column=0, padx=10, pady=5)
         entry_state_of_charge = tk.Entry(frame, font=("Arial", 12))
-        entry_state_of_charge.grid(row=0, column=1, padx=10, pady=5)
+        entry_state_of_charge.grid(row=1, column=1, padx=10, pady=5)
 
-        tk.Label(frame, text="Capacitatea bateriei (kWh):", font=("Arial", 12), bg="#f0f0f0").grid(row=1, column=0, padx=10, pady=5)
-        entry_battery_capacity = tk.Entry(frame, font=("Arial", 12))
-        entry_battery_capacity.grid(row=1, column=1, padx=10, pady=5)
-
-        tk.Label(frame, text="Vârsta vehiculului (ani):", font=("Arial", 12), bg="#f0f0f0").grid(row=2, column=0, padx=10, pady=5)
-        entry_vehicle_age = tk.Entry(frame, font=("Arial", 12))
-        entry_vehicle_age.grid(row=2, column=1, padx=10, pady=5)
-
-        tk.Label(frame, text="Temperatura exterioară (°C):", font=("Arial", 12), bg="#f0f0f0").grid(row=3, column=0, padx=10, pady=5)
-        entry_outside_temperature = tk.Entry(frame, font=("Arial", 12))
-        entry_outside_temperature.grid(row=3, column=1, padx=10, pady=5)
+        tk.Label(frame, text="Temperatura exterioară (°C):", font=("Arial", 12), bg="#f0f0f0").grid(row=2, column=0, padx=10, pady=5)
+        tk.Label(frame, text=str(self.temperatura) + " °C", font=("Arial", 12), bg="#f0f0f0").grid(row=2, column=1, padx=10, pady=5)
 
         road_type_var = tk.StringVar(value='Autostrada')
-        tk.Label(frame, text="Tipul de drum:", font=("Arial", 12), bg="#f0f0f0").grid(row=4, column=0, padx=10, pady=5)
+        tk.Label(frame, text="Tipul de drum:", font=("Arial", 12), bg="#f0f0f0").grid(row=3, column=0, padx=10, pady=5)
         road_type_menu = ttk.Combobox(frame, textvariable=road_type_var, values=['Autostrada', 'Oras', 'Munti'], font=("Arial", 12))
-        road_type_menu.grid(row=4, column=1, padx=10, pady=5)
+        road_type_menu.grid(row=3, column=1, padx=10, pady=5)
 
         result_label = tk.Label(root, text="", font=("Arial", 12), justify=tk.LEFT, bg="#f0f0f0")
         result_label.pack()
@@ -146,22 +176,26 @@ class KmHoursEstimatorApp:
                     return
             try:
                 state_of_charge = float(entry_state_of_charge.get())
-                battery_capacity = float(entry_battery_capacity.get())
-                vehicle_age = float(entry_vehicle_age.get())
-                outside_temperature = float(entry_outside_temperature.get())
+                outside_temperature = float(self.temperatura)
                 road_type = road_type_var.get()
+                vehicul = self.vehicle_var.get()
+                battery_capacity = self.vehicle_battery.get(vehicul, 50.0)
+                vehicle_age = self.vehicle_age.get(vehicul, 1.0)
                 est_dist, tot_dist, est_dur, drain_rate = self.logic_distance_estimation(
                     state_of_charge, battery_capacity, vehicle_age, outside_temperature, road_type)
-                result_label.config(text=f"Distanța estimată până la următoarea încărcare: {est_dist:.2f} km | Distanța totală cu bateria complet încărcată: {tot_dist:.2f} km\n"
-                                        f"Durata estimată până la următoarea încărcare: {est_dur:.2f} ore | Viteza de descărcare a bateriei: {drain_rate:.2f} kWh/oră")
+                result_label.config(
+                    text=(
+                        f"Distanța estimată până la următoarea încărcare: {est_dist:.2f} km\n"
+                        f"Distanța totală cu bateria complet încărcată: {tot_dist:.2f} km\n"
+                        f"Durata estimată până la următoarea încărcare: {est_dur:.2f} ore\n"
+                        f"Viteza de descărcare a bateriei: {drain_rate:.2f} kWh/oră"
+                    )
+                )
             except Exception as e:
                 result_label.config(text=f"Eroare la estimare: {str(e)}")
 
         predict_button = tk.Button(root, text="Prezice", command=on_predict, font=("Arial", 14), bg="lightblue", padx=20, pady=5)
         predict_button.pack(pady=10)
-
-    def run(self):
-        self.root.mainloop()
 
 # Compatibilitate cu codul existent
 

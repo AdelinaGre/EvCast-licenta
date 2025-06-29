@@ -86,13 +86,12 @@ class ChargingDuration:
 
         
         form_frame = tk.Frame(self.root, bg="white", bd=2, relief="solid")
-        form_frame.place(x=50, y=200, width=400, height=400)
+        form_frame.place(x=50, y=200, width=400, height=350)
 
        
         self.entries = {}
         fields = [
             "Energy Consumed (kWh)",
-            "Charging Rate (kWh)",
             "Charging Cost (USD)",
             "State of Charge (Start %)",
             "State of Charge (End %)",
@@ -125,18 +124,18 @@ class ChargingDuration:
             fg="white",
             command=self.estimate_duration
         )
-        estimate_button.place(x=20, y=320, width=360)
+        estimate_button.place(x=20, y=270, width=360)
 
         
         voice_all_button = tk.Button(
             form_frame,
-            text="🎤 Introducere Vocală Toate Câmpurile",
+            text=" Introducere Vocală Toate Câmpurile",
             font=("Roboto", 12, "bold"),
             bg="#39753c",
             fg="white",
             command=self.record_all_fields
         )
-        voice_all_button.place(x=20, y=360, width=360)
+        voice_all_button.place(x=20, y=310, width=360)
 
         info_frame = tk.Frame(self.root, bg="white", bd=2, relief="solid")
         info_frame.place(x=500, y=200, width=500, height=400)
@@ -173,7 +172,7 @@ class ChargingDuration:
                     
                     self.vehicle_var = StringVar()
                     vehicle_frame = tk.Frame(self.root, bg="white")
-                    vehicle_frame.place(x=50, y=620, width=400, height=50)
+                    vehicle_frame.place(x=50, y=570, width=400, height=50)
                     
                     tk.Label(vehicle_frame, text="Selectează vehicul:",
                             bg="white", fg="black").pack(side="left", padx=10)
@@ -253,8 +252,6 @@ class ChargingDuration:
 
             field_mapping = {
                 "Energy Consumed (kWh)": "Energy Consumed (kWh)",
-                "Charging Rate (kWh)": "Charging Rate (kW)",
-                "Charging Rate (kW)": "Charging Rate (kW)",
                 "Charging Cost (USD)": "Charging Cost (USD)",
                 "State of Charge (Start %)": "State of Charge (Start %)",
                 "State of Charge (End %)": "State of Charge (End %)",
@@ -303,6 +300,10 @@ class ChargingDuration:
                         features["Day of Week"] = value.strip()
                     elif "Temperatură" in key:
                         features["Temperature (°C)"] = float(value.split()[0].replace("°C", ""))
+
+            # Determină rata de încărcare automat în funcție de tipul de încărcător
+            charger_type = vehicul.get("charger_type", "Level 2")
+            features["Charging Rate (kW)"] = self.get_charging_rate_by_type(charger_type)
 
            
             input_dict = {col: 0 for col in self.model.feature_names_in_}
@@ -533,7 +534,6 @@ class ChargingDuration:
                 
                 field_keywords = {
                     "Energy Consumed (kWh)": ["energie", "consum", "kwh"],
-                    "Charging Rate (kWh)": ["rata", "incarcare", "kw"],
                     "Charging Cost (USD)": ["cost", "pret", "usd"],
                     "State of Charge (Start %)": ["start", "inceput", "procent"],
                     "State of Charge (End %)": ["final", "sfarsit", "procent"],
@@ -558,6 +558,17 @@ class ChargingDuration:
         except Exception as e:
             print(f"Eroare la înregistrarea valorilor: {str(e)}")
             messagebox.showerror("Eroare", f"Nu s-a putut procesa înregistrarea: {str(e)}")
+
+    def get_charging_rate_by_type(self, charger_type):
+        """Returnează rata de încărcare tipică pentru tipul de încărcător"""
+        if charger_type == "Level 1":
+            return 1.5  # Rata medie pentru Level 1 (0.5-2 kW)
+        elif charger_type == "Level 2":
+            return 7.0  # Rata medie pentru Level 2 (3-22 kW)
+        elif charger_type == "DC Fast Charger":
+            return 50.0  # Rata medie pentru DC Fast Charger (22-350 kW)
+        else:
+            return 7.0  # Default la Level 2
 
 if __name__ == "__main__":
     root = tk.Tk()
