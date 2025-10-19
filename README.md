@@ -5,6 +5,7 @@
 ## 📘 Overview
 
 EVcast is a smart desktop application designed to enhance the experience of electric vehicle (EV) users by predicting key metrics such as charging duration, cost, and remaining autonomy. Built using Python and Tkinter, and powered by machine learning algorithms, EVcast integrates voice recognition and Firebase services to deliver a seamless, interactive user experience.
+## ![EVcast Interface](main_menu.png)
 
 ## 🎯 Project Motivation
 
