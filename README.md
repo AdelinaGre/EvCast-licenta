@@ -46,7 +46,7 @@ With the global shift toward sustainable transportation and the rapid growth of 
 5. **Model Training**: Split into training and test sets using `train_test_split`.
 6. **Hyperparameter Tuning**: Compared Grid Search vs Genetic Algorithms.
 7. **Evaluation**: Metrics like R² and MSE used to assess model performance.
-
+## ![Models accuracy](models_accuracy.png)
 ## 🧩 Application Architecture
 
 - Modular design with object-oriented principles
