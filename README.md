@@ -57,7 +57,7 @@ With the global shift toward sustainable transportation and the rapid growth of 
   - `ChargingDuration`, `ChargingCost`, `Estimare_Km_h`: ML-powered estimators
   - `VehicleProfile`: Stores user vehicle data
   - `SpeechRecognition`: Voice input and command processing
-
+## ![Estimate cost interface](estimate_cost.png)
 ## 🚀 Future Enhancements
 
 - 📍 GPS integration for dynamic location-based predictions
@@ -83,6 +83,4 @@ With the global shift toward sustainable transportation and the rapid growth of 
 
 This project is part of a Bachelor's thesis at Universitatea „1 Decembrie 1918” din Alba Iulia, Faculty of Informatics and Engineering.
 
----
 
-Would you like help turning this into a GitHub page or adding setup instructions for Firebase and Whisper?
